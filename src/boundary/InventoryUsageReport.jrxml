@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 9.0.0.final using JasperReports Library version 6.21.0-4f56c4f36cd19e17675219a9ac4692d5f0f13b06  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="InventoryUsageReport" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="36b9a6d8-5be2-48d7-8652-37cf39217918">
+	<parameter name="StartDate" class="java.util.Date"/>
+	<parameter name="EndDate" class="java.util.Date"/>
+	<queryString>
+		<![CDATA[SELECT 
+            i.[Item Name] AS ItemName,
+            SUM(a.Quantity) AS TotalUsed
+        FROM 
+            (TblInventoryItemAppointment AS a
+             INNER JOIN TblAppointments AS appt ON a.AppointmentId = appt.AppointmentId)
+            INNER JOIN TblInventoryItems AS i ON a.ItemId = i.ItemID
+        WHERE 
+            appt.AppointmentDate BETWEEN $P{StartDate} AND $P{EndDate}
+        GROUP BY 
+            i.[Item Name]
+        ORDER BY 
+            TotalUsed DESC]]>
+	</queryString>
+	<field name="ItemName" class="java.lang.String"/>
+	<field name="TotalUsed" class="java.lang.Long"/>
+	<variable name="TotalUsed_SUM" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{TotalUsed}]]></variableExpression>
+	</variable>
+	<title>
+		<band height="60">
+			<staticText>
+				<reportElement x="0" y="0" width="555" height="30" uuid="f133b3b3-96e2-4fa1-9b76-456d9eb92f20"/>
+				<textElement textAlignment="Center">
+					<font size="18" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Inventory Usage Report]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="35" width="555" height="20" uuid="d34df8c7-2d33-43e1-b7ef-c25ab92db2ae"/>
+				<textElement textAlignment="Center">
+					<font size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA["From " + new java.text.SimpleDateFormat("dd/MM/yyyy").format($P{StartDate}) + 
+                                              " to " + new java.text.SimpleDateFormat("dd/MM/yyyy").format($P{EndDate})]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="20">
+			<staticText>
+				<reportElement x="0" y="0" width="300" height="20" uuid="9b313c27-cc16-4463-92e4-278ff9ce8b8d"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Item Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="320" y="0" width="100" height="20" uuid="c0bc08d6-826b-44cc-89f2-ea5eaa8358ee"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Times Used]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="20">
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="0" width="555" height="20" backcolor="#F0F8FF" uuid="2b8ed16f-2f41-4c82-9dce-6ff6b6ff32b4">
+					<printWhenExpression><![CDATA[$V{REPORT_COUNT} % 2 == 0]]></printWhenExpression>
+				</reportElement>
+			</rectangle>
+			<textField>
+				<reportElement x="0" y="0" width="300" height="20" uuid="51762c88-d2d3-4d1f-bfc4-0ff963db8397"/>
+				<textFieldExpression><![CDATA[$F{ItemName}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="320" y="0" width="100" height="20" uuid="e9d7643f-93c5-4602-877a-85075505f4d5"/>
+				<textFieldExpression><![CDATA[$F{TotalUsed}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="340">
+			<textField>
+				<reportElement x="0" y="0" width="420" height="20" uuid="c7a2fdb4-27e4-4cb7-b98c-7d4c88fcb003"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Total Items Used: " + $V{TotalUsed_SUM}]]></textFieldExpression>
+			</textField>
+			<pieChart>
+				<chart evaluationTime="Report">
+					<reportElement x="0" y="30" width="500" height="300" uuid="6b1ea325-b20f-41d3-9566-daa879ea0249"/>
+					<chartTitle>
+						<titleExpression><![CDATA["Item Usage Distribution"]]></titleExpression>
+					</chartTitle>
+					<chartSubtitle/>
+					<chartLegend/>
+				</chart>
+				<pieDataset>
+					<keyExpression><![CDATA[$F{ItemName} == null ? "Unknown" : $F{ItemName}]]></keyExpression>
+					<valueExpression><![CDATA[$F{TotalUsed} == null ? 0 : $F{TotalUsed}]]></valueExpression>
+				</pieDataset>
+				<piePlot>
+					<plot/>
+					<itemLabel/>
+				</piePlot>
+			</pieChart>
+		</band>
+	</summary>
+</jasperReport>

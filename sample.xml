@@ -1,0 +1,53 @@
+<InventoryData importDate="2024-06-01">
+    <Suppliers>
+        <Supplier>
+            <SupplierName>ABC Medical</SupplierName>
+            <Email>abc@medical.com</Email>
+            <Phone>+972-4-1234567</Phone>
+            <Address>Haifa, Israel</Address>
+
+            <InventoryItems>
+                <InventoryItem>
+                    <ItemID>ITM001</ItemID>
+                    <Name>Gloves</Name>
+                    <Description>Medical examination glovessssss</Description>
+                    <Quantity>500</Quantity>
+                    <ExpirationDate>2025-12-31</ExpirationDate>
+                    <SerialNumber>SN-123456</SerialNumber>
+                    <LowStockAlertThreshold>50</LowStockAlertThreshold>
+                </InventoryItem>
+
+                <InventoryItem>
+                    <ItemID>ITM002</ItemID>
+                    <Name>Face Masksssss</Name>
+                    <Description>Disposable masks</Description>
+                    <Quantity>1000</Quantity>
+                    <ExpirationDate>2025-06-01</ExpirationDate>
+                    <SerialNumber>SN-654321</SerialNumber>
+                    <LowStockAlertThreshold>100</LowStockAlertThreshold>
+                </InventoryItem>
+            </InventoryItems>
+
+        </Supplier>
+
+        <Supplier>
+            <SupplierName>Global Dent</SupplierName>
+            <Email>global@dent.com</Email>
+            <Phone>+972-4-9876543</Phone>
+            <Address>Tel Aviv, Israel</Address>
+
+            <InventoryItems>
+                <InventoryItem>
+                    <ItemID>ITM003</ItemID>
+                    <Name>Dental Mirrorrrrrrr</Name>
+                    <Description>High-quality dental mirrors</Description>
+                    <Quantity>300</Quantity>
+                    <ExpirationDate>2026-01-15</ExpirationDate>
+                    <SerialNumber>SN-789012</SerialNumber>
+                    <LowStockAlertThreshold>30</LowStockAlertThreshold>
+                </InventoryItem>
+            </InventoryItems>
+
+        </Supplier>
+    </Suppliers>
+</InventoryData>

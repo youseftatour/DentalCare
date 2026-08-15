@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 9.0.0.final using JasperReports Library version 6.21.0-4f56c4f36cd19e17675219a9ac4692d5f0f13b06  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="treatment-report" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="9d1db6a3-0e6a-4e63-b723-20dd33db6ef2">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="New Data Adapter"/>
+	<parameter name="DentistID" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT 
+    CONCAT(P.FirstName, ' ', P.LastName) AS PatientName,
+    TP.StartDate,
+    TP.EstimatedCompletionDate,
+    TP.Status AS PlanStatus,
+    A.TreatmentName,
+    A.Status AS AppointmentStatus
+   
+FROM TblPersons AS P
+INNER JOIN TblPatients AS Pa ON P.PersonId = Pa.PatientId
+INNER JOIN TblTreatmentPlans AS TP ON Pa.PatientId = TP.PatientId
+LEFT JOIN TblAppointments AS A ON TP.TreatmentPlanID = A.TreatmentPlanID
+WHERE 
+    TP.Status = 'Active'
+    AND TP.CreatedByDentist = $P{DentistID}
+    AND TP.EstimatedCompletionDate > Date()
+    AND A.Status = 'Active'
+    
+GROUP BY 
+    CONCAT(P.FirstName, ' ', P.LastName),
+    TP.StartDate,
+    TP.EstimatedCompletionDate,
+    TP.Status,
+    A.TreatmentName,
+    A.Status]]>
+	</queryString>
+	<field name="patientName" class="java.lang.String"/>
+	<field name="StartDate" class="java.sql.Timestamp"/>
+	<field name="Status" class="java.lang.String"/>
+	<field name="TreatmentName" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="60" splitType="Stretch">
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="0" width="555" height="60" backcolor="#51969A" uuid="b1cbf220-3f1d-47cf-83b1-9440f4c472ab"/>
+			</rectangle>
+			<staticText>
+				<reportElement x="0" y="20" width="555" height="30" uuid="2d9ed5b2-5c3a-4b9e-aace-8abfb0e657b2"/>
+				<textElement textAlignment="Center">
+					<font size="20" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Treatment Progress Report]]></text>
+			</staticText>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="30">
+			<staticText>
+				<reportElement x="0" y="0" width="150" height="30" uuid="ecb8db90-ec4b-4469-a5a1-99cc42679a98"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Patient Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="0" width="105" height="30" uuid="d5f93f28-b58c-4a0c-91e5-ea9e0a0e2b6f"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Status]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="255" y="0" width="150" height="30" uuid="b5e7c831-96cf-4032-8d79-1183d19983d3"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Treatment Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="405" y="0" width="150" height="30" uuid="d66344d2-0a0d-44cb-8122-39fc5b5aa9cb"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Start Date]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="20">
+			<textField>
+				<reportElement x="0" y="0" width="150" height="20" uuid="4a8b9653-9d4c-421a-a7f7-9a6a875c3db3"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{patientName}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="150" y="0" width="105" height="20" uuid="4a8b9633-9d4c-421a-a7f7-9a6a875c3db3"/>
+				<textFieldExpression><![CDATA[$F{Status}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="255" y="0" width="150" height="20" uuid="f90589e1-ea12-4b8b-b49a-259a8df199a1"/>
+				<textFieldExpression><![CDATA[$F{TreatmentName}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd/MM/yyyy">
+				<reportElement x="405" y="0" width="150" height="20" uuid="ea301a92-2471-45d1-8f76-71dc93b446d3"/>
+				<textFieldExpression><![CDATA[$F{StartDate}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="50">
+			<staticText>
+				<reportElement x="0" y="20" width="555" height="30" uuid="876a1ed4-94bb-44c0-83b5-3ea658a8894d"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[No treatment progress data found for the selected patient.]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

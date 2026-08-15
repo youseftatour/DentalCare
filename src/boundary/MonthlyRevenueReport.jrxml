@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 9.0.0.final using JasperReports Library version 6.21.0-4f56c4f36cd19e17675219a9ac4692d5f0f13b06  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="MonthlyRevenueReport" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c09de79e-1254-4587-b8a6-b24324e2ec11">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="revenueAdapter.jrdax"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="reportMonth" class="java.lang.String"/>
+	<parameter name="reportYear" class="java.lang.String"/>
+	<queryString language="SQL">
+		<![CDATA[SELECT 
+    a.TreatmentName,
+    a.Cost,
+    p.FirstName + ' ' + p.LastName AS DentistName
+FROM 
+    TblAppointments AS a
+INNER JOIN 
+    TblPersons AS p ON a.AssignedMedicalStaff = p.PersonID
+WHERE 
+    a.Status = 'Completed'
+    AND Format(a.AppointmentDate, 'mm') = $P{reportMonth}
+    AND Format(a.AppointmentDate, 'yyyy') = $P{reportYear}]]>
+	</queryString>
+	<field name="TreatmentName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="TreatmentName"/>
+		<property name="com.jaspersoft.studio.field.label" value="TreatmentName"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="TblAppointments"/>
+	</field>
+	<field name="Cost" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="Cost"/>
+		<property name="com.jaspersoft.studio.field.label" value="Cost"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="TblAppointments"/>
+	</field>
+	<field name="DentistName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="DENTISTNAME"/>
+		<property name="com.jaspersoft.studio.field.label" value="DentistName"/>
+	</field>
+	<variable name="TotalRevenue" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{Cost}]]></variableExpression>
+	</variable>
+	<variable name="TreatmentCostSum" class="java.lang.Double" resetType="Group" resetGroup="TreatmentGroup" calculation="Sum">
+		<variableExpression><![CDATA[$F{Cost}]]></variableExpression>
+	</variable>
+	<variable name="DentistRevenue" class="java.lang.Double" resetType="Group" resetGroup="DentistGroup" calculation="Sum">
+		<variableExpression><![CDATA[$F{Cost}]]></variableExpression>
+	</variable>
+	<group name="DentistGroup">
+		<groupExpression><![CDATA[$F{DentistName}]]></groupExpression>
+		<groupHeader>
+			<band height="34">
+				<textField>
+					<reportElement x="100" y="6" width="300" height="20" uuid="b2c4b372-c606-4e91-b852-0280838e2998"/>
+					<textFieldExpression><![CDATA[$F{DentistName}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="2" width="100" height="30" forecolor="#10222A" uuid="679f1570-88de-44fb-9b49-6d125362ec89"/>
+					<textElement>
+						<font size="14" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Dentist Name:]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="20">
+				<textField>
+					<reportElement x="0" y="-16" width="300" height="20" forecolor="#2B5263" uuid="e19911e8-3fd9-4516-a51e-cce5ff6a6227"/>
+					<textElement>
+						<font isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA["Total by " + $F{DentistName} + ": $" + new java.text.DecimalFormat("#,##0.00").format($V{DentistRevenue})]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="TreatmentGroup">
+		<groupExpression><![CDATA[$F{TreatmentName}]]></groupExpression>
+		<groupHeader>
+			<band height="20"/>
+		</groupHeader>
+		<groupFooter>
+			<band height="20">
+				<textField>
+					<reportElement x="20" y="-16" width="250" height="20" forecolor="#2B5263" uuid="88bce25d-913d-4a0b-a5e6-773c77360951"/>
+					<box>
+						<pen lineWidth="0.0" lineStyle="Solid"/>
+					</box>
+					<textFieldExpression><![CDATA["Subtotal for " + $F{TreatmentName} + ": $" + new java.text.DecimalFormat("#,##0.00").format($V{TreatmentCostSum})]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band height="802" splitType="Stretch">
+			<property name="com.jaspersoft.studio.layout"/>
+		</band>
+	</background>
+	<title>
+		<band height="30">
+			<staticText>
+				<reportElement x="160" y="0" width="250" height="30" forecolor="#10222A" backcolor="#10222A" uuid="8f8d692f-0a47-492e-8b63-f7a60e325246"/>
+				<textElement textAlignment="Left">
+					<font size="20" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Monthly Revenue Report]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="20">
+			<textField>
+				<reportElement x="0" y="-16" width="200" height="20" forecolor="#0F2128" uuid="b1e1ca02-712d-4e4f-8828-91fad63c2267"/>
+				<textFieldExpression><![CDATA[$F{TreatmentName}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="220" y="-16" width="100" height="20" forecolor="#0F2128" uuid="7fdaeb1c-6039-4557-b569-b607ce99e642"/>
+				<textFieldExpression><![CDATA["$" + $F{Cost}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="30">
+			<textField>
+				<reportElement x="0" y="0" width="300" height="20" forecolor="#10222A" uuid="e16976ff-08e9-4289-983e-13c4f96cf50d"/>
+				<textElement>
+					<font size="14" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Total Revenue: $" + new java.text.DecimalFormat("#,##0.00").format($V{TotalRevenue})]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>
