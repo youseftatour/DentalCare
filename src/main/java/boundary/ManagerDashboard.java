@@ -30,10 +30,12 @@ public class ManagerDashboard extends JFrame {
         this.managerController = new ManagerController();
         setTitle("Manager Dashboard");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1000, 700);
+        setSize(1120, 760);
+        setMinimumSize(new Dimension(980, 650));
         setLocationRelativeTo(null);
 
         JTabbedPane tabbedPane = new JTabbedPane();
+        UIFactory.styleTabs(tabbedPane);
 
         GradientPanel treatmentPlanTab = new GradientPanel();
         treatmentPlanTab.setLayout(new BorderLayout());
@@ -41,21 +43,35 @@ public class ManagerDashboard extends JFrame {
         tabbedPane.addTab("Treatment Plans", treatmentPlanTab);
 
         GradientPanel reportsTab = new GradientPanel();
+        reportsTab.setLayout(new BorderLayout(24, 24));
+        reportsTab.setBorder(BorderFactory.createEmptyBorder(42, 48, 48, 48));
         JButton revenueReportBtn = UIFactory.createButton("Revenue Report");
         JButton inventoryUsageReportBtn = UIFactory.createButton("Inventory Usage");
         JButton treatmentProgressBtn = UIFactory.createButton("Treatment Progress");
 
-        Dimension btnSize = new Dimension(200, 40);
-        revenueReportBtn.setPreferredSize(btnSize);
-        inventoryUsageReportBtn.setPreferredSize(btnSize);
-        treatmentProgressBtn.setPreferredSize(btnSize);
+        JPanel reportHeading = new JPanel();
+        reportHeading.setOpaque(false);
+        reportHeading.setLayout(new BoxLayout(reportHeading, BoxLayout.Y_AXIS));
+        JLabel reportTitle = UIFactory.createLabel("Reports");
+        reportTitle.setFont(DesignUtils.TITLE_FONT);
+        JLabel reportSubtitle = UIFactory.createLabel(
+            "Generate clinic insights using the latest database records");
+        reportSubtitle.setForeground(new Color(215, 227, 233));
+        reportHeading.add(reportTitle);
+        reportHeading.add(Box.createVerticalStrut(6));
+        reportHeading.add(reportSubtitle);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.gridx = 0;
-        gbc.gridy = 0; reportsTab.add(revenueReportBtn, gbc);
-        gbc.gridy = 1; reportsTab.add(inventoryUsageReportBtn, gbc);
-        gbc.gridy = 2; reportsTab.add(treatmentProgressBtn, gbc);
+        JPanel reportCards = new JPanel(new GridLayout(1, 3, 18, 0));
+        reportCards.setOpaque(false);
+        reportCards.add(createReportCard("Monthly revenue",
+            "Summarize paid appointment revenue by month and year.", revenueReportBtn));
+        reportCards.add(createReportCard("Inventory usage",
+            "Review inventory activity for a selected date range.", inventoryUsageReportBtn));
+        reportCards.add(createReportCard("Treatment progress",
+            "View active treatment-plan progress by clinician.", treatmentProgressBtn));
+
+        reportsTab.add(reportHeading, BorderLayout.NORTH);
+        reportsTab.add(reportCards, BorderLayout.CENTER);
 
         revenueReportBtn.addActionListener(e -> showRevenueReportDialog());
         treatmentProgressBtn.addActionListener(e -> {
@@ -79,12 +95,14 @@ public class ManagerDashboard extends JFrame {
 
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         searchPanel.setOpaque(false);
+        searchPanel.setBorder(BorderFactory.createEmptyBorder(4, 0, 10, 0));
 
         JComboBox<String> searchCriteria = new JComboBox<>(new String[]{"Item Name", "Serial Number"});
         JTextField searchField = new JTextField(20);
         JButton searchBtn = UIFactory.createButton("Search");
 
-        searchPanel.add(new JLabel("Search by:"));
+        JLabel searchLabel = UIFactory.createLabel("Search by");
+        searchPanel.add(searchLabel);
         searchPanel.add(searchCriteria);
         searchPanel.add(searchField);
         searchPanel.add(searchBtn);
@@ -105,13 +123,20 @@ public class ManagerDashboard extends JFrame {
                 try {
                     int quantity = Integer.parseInt(inventoryModel.getValueAt(modelRow, 3).toString());
                     int threshold = Integer.parseInt(inventoryModel.getValueAt(modelRow, 7).toString());
-                    comp.setBackground(quantity <= threshold ? Color.PINK : Color.WHITE);
+                    if (isRowSelected(row)) {
+                        comp.setBackground(new Color(205, 230, 246));
+                    } else if (quantity <= threshold) {
+                        comp.setBackground(new Color(255, 225, 226));
+                    } else {
+                        comp.setBackground(row % 2 == 0 ? Color.WHITE : new Color(246, 249, 250));
+                    }
                 } catch (NumberFormatException e) {
                     comp.setBackground(Color.WHITE);
                 }
                 return comp;
             }
         };
+        UIFactory.styleTable(inventoryTable);
 
         inventoryModel.addTableModelListener(e -> {
             if (e.getType() == TableModelEvent.UPDATE) {
@@ -145,9 +170,10 @@ public class ManagerDashboard extends JFrame {
         });
 
         JScrollPane scrollPane = new JScrollPane(inventoryTable);
+        scrollPane.setBorder(BorderFactory.createLineBorder(DesignUtils.BORDER_COLOR));
 
         GradientPanel inventoryButtons = new GradientPanel();
-        inventoryButtons.setLayout(new FlowLayout());
+        inventoryButtons.setLayout(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         JButton addBtn = UIFactory.createButton("Add Item");
         JButton deleteBtn = UIFactory.createButton("Delete Selected");
         JButton loadXmlBtn = UIFactory.createButton("Load XML");
@@ -160,8 +186,12 @@ public class ManagerDashboard extends JFrame {
         inventoryButtons.add(deleteBtn);
         inventoryButtons.add(loadXmlBtn);
 
-        inventoryTab.add(inventoryTitle, BorderLayout.NORTH);
-        inventoryTab.add(searchPanel, BorderLayout.PAGE_START);
+        JPanel inventoryHeader = new JPanel(new BorderLayout());
+        inventoryHeader.setOpaque(false);
+        inventoryHeader.setBorder(BorderFactory.createEmptyBorder(18, 18, 0, 18));
+        inventoryHeader.add(inventoryTitle, BorderLayout.NORTH);
+        inventoryHeader.add(searchPanel, BorderLayout.SOUTH);
+        inventoryTab.add(inventoryHeader, BorderLayout.NORTH);
         inventoryTab.add(scrollPane, BorderLayout.CENTER);
         inventoryTab.add(inventoryButtons, BorderLayout.SOUTH);
 
@@ -359,6 +389,36 @@ public class ManagerDashboard extends JFrame {
         JOptionPane.showMessageDialog(this,
             "The report could not be generated. Please try again.",
             "Report Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private JPanel createReportCard(String title, String description, JButton action) {
+        JPanel card = new JPanel(new GridBagLayout());
+        card.setBackground(DesignUtils.SURFACE_COLOR);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(DesignUtils.BORDER_COLOR),
+            BorderFactory.createEmptyBorder(28, 24, 28, 24)));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(DesignUtils.SUBTITLE_FONT);
+        titleLabel.setForeground(DesignUtils.TEXT_COLOR);
+        card.add(titleLabel, gbc);
+        gbc.gridy = 1;
+        gbc.weighty = 1;
+        gbc.insets = new Insets(12, 0, 24, 0);
+        JLabel descriptionLabel = new JLabel("<html><body style='width:190px'>" + description + "</body></html>");
+        descriptionLabel.setFont(DesignUtils.LABEL_FONT);
+        descriptionLabel.setForeground(DesignUtils.MUTED_TEXT_COLOR);
+        card.add(descriptionLabel, gbc);
+        gbc.gridy = 2;
+        gbc.weighty = 0;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        card.add(action, gbc);
+        return card;
     }
 
     private void runReport(Callable<JasperPrint> reportTask) {

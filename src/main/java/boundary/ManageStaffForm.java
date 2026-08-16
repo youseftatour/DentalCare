@@ -40,19 +40,24 @@ public class ManageStaffForm extends JPanel {
         };
 
         table = new JTable(model);
-        table.setRowHeight(25);
-        table.setFont(DesignUtils.LABEL_FONT);
-        table.getTableHeader().setFont(DesignUtils.BUTTON_FONT);
+        UIFactory.styleTable(table);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        int[] widths = {100, 110, 120, 125, 190, 110, 165, 180, 100};
+        for (int i = 0; i < widths.length; i++) {
+            table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
+        }
 
         sorter = new TableRowSorter<>(model);
         sorter.setComparator(0, Comparator.comparing(Object::toString));
         table.setRowSorter(sorter);
 
         JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createLineBorder(DesignUtils.BORDER_COLOR));
 
         // Search Panel
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         searchPanel.setOpaque(false);
+        searchPanel.setBorder(BorderFactory.createEmptyBorder(4, 0, 10, 0));
         JComboBox<String> searchCriteria = new JComboBox<>(new String[]{"First Name", "Role"});
         JTextField searchField = new JTextField(20);
         JButton searchBtn = UIFactory.createButton("Search");
@@ -68,13 +73,13 @@ public class ManageStaffForm extends JPanel {
             }
         });
 
-        searchPanel.add(new JLabel("Search by:"));
+        searchPanel.add(UIFactory.createLabel("Search by"));
         searchPanel.add(searchCriteria);
         searchPanel.add(searchField);
         searchPanel.add(searchBtn);
 
         // Buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         buttonPanel.setOpaque(false);
         JButton addBtn = UIFactory.createButton("Add Staff");
         JButton editBtn = UIFactory.createButton("Edit Staff");
@@ -102,6 +107,7 @@ public class ManageStaffForm extends JPanel {
         // Top layout
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setOpaque(false);
+        topPanel.setBorder(BorderFactory.createEmptyBorder(18, 18, 0, 18));
         topPanel.add(title, BorderLayout.NORTH);
         topPanel.add(searchPanel, BorderLayout.SOUTH);
 

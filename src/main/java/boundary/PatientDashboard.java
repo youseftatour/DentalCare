@@ -11,9 +11,7 @@ import utils.DesignUtils;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
 public class PatientDashboard extends JFrame {
     private final Patient patient;
@@ -23,7 +21,8 @@ public class PatientDashboard extends JFrame {
 
     public PatientDashboard(User user) {
         setTitle("Patient Dashboard");
-        setSize(900, 600);
+        setSize(1040, 680);
+        setMinimumSize(new Dimension(880, 600));
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
@@ -36,9 +35,11 @@ public class PatientDashboard extends JFrame {
         JLabel title = UIFactory.createLabel("Welcome, " + patient.getName());
         title.setFont(DesignUtils.TITLE_FONT);
         title.setHorizontalAlignment(SwingConstants.CENTER);
+        title.setBorder(BorderFactory.createEmptyBorder(28, 20, 18, 20));
         mainPanel.add(title, BorderLayout.NORTH);
 
         JTabbedPane tabs = new JTabbedPane();
+        UIFactory.styleTabs(tabs);
         tabs.addTab("Profile", createProfileTab());
         tabs.addTab("Treatment Plan", createTreatmentTab());
         tabs.addTab("Appointments", createAppointmentsTab());
@@ -52,9 +53,11 @@ public class PatientDashboard extends JFrame {
 
         JPanel card = new JPanel();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBackground(new Color(255, 255, 255, 30));
-        card.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
-        card.setMaximumSize(new Dimension(400, 300));
+        card.setBackground(DesignUtils.SURFACE_COLOR);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(DesignUtils.BORDER_COLOR),
+            BorderFactory.createEmptyBorder(32, 42, 32, 42)));
+        card.setPreferredSize(new Dimension(560, 330));
 
         card.add(createLabeledLine("Full Name: ", patient.getName()));
         card.add(Box.createVerticalStrut(15));
@@ -76,11 +79,12 @@ public class PatientDashboard extends JFrame {
 
         JLabel labelComponent = new JLabel(label);
         labelComponent.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        labelComponent.setForeground(Color.WHITE);
+        labelComponent.setForeground(DesignUtils.TEXT_COLOR);
+        labelComponent.setPreferredSize(new Dimension(135, 28));
 
         JLabel valueComponent = new JLabel(value);
         valueComponent.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        valueComponent.setForeground(Color.LIGHT_GRAY);
+        valueComponent.setForeground(DesignUtils.MUTED_TEXT_COLOR);
 
         line.add(labelComponent, BorderLayout.WEST);
         line.add(valueComponent, BorderLayout.CENTER);
@@ -105,9 +109,7 @@ public class PatientDashboard extends JFrame {
 
         JTable table = new JTable(data, columnNames);
         table.setEnabled(false);
-        table.setRowHeight(25);
-        table.setFont(DesignUtils.LABEL_FONT);
-        table.getTableHeader().setFont(DesignUtils.BUTTON_FONT);
+        UIFactory.styleTable(table);
 
         JScrollPane scrollPane = new JScrollPane(table);
         JLabel title = UIFactory.createLabel("Active Treatment Plan");
@@ -145,14 +147,12 @@ public class PatientDashboard extends JFrame {
                 return false;
             }
         });
-        appointmentTable.setRowHeight(25);
-        appointmentTable.setFont(DesignUtils.LABEL_FONT);
-        appointmentTable.getTableHeader().setFont(DesignUtils.BUTTON_FONT);
+        UIFactory.styleTable(appointmentTable);
 
         JScrollPane scrollPane = new JScrollPane(appointmentTable);
 
         // Buttons
-        JPanel buttonPanel = new JPanel();
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 4));
         buttonPanel.setOpaque(false);
         JButton rescheduleBtn = UIFactory.createButton("Reschedule");
         JButton suspendBtn = UIFactory.createButton("Suspend");

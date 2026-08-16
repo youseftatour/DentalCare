@@ -3,6 +3,7 @@ package utils;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 
 import java.awt.*;
 
@@ -52,6 +53,64 @@ public class UIFactory {
 
 	        return table;
 	    }
+
+    public static void styleTable(JTable table) {
+        table.setFont(DesignUtils.LABEL_FONT);
+        table.setRowHeight(32);
+        table.setShowVerticalLines(false);
+        table.setGridColor(new Color(230, 236, 239));
+        table.setSelectionBackground(new Color(205, 230, 246));
+        table.setSelectionForeground(DesignUtils.TEXT_COLOR);
+        table.setIntercellSpacing(new Dimension(0, 1));
+        table.setFillsViewportHeight(true);
+
+        JTableHeader header = table.getTableHeader();
+        header.setFont(DesignUtils.BUTTON_FONT);
+        header.setBackground(new Color(231, 240, 245));
+        header.setForeground(DesignUtils.TEXT_COLOR);
+        header.setPreferredSize(new Dimension(header.getPreferredSize().width, 36));
+        header.setReorderingAllowed(false);
+    }
+
+    public static void styleTabs(JTabbedPane tabs) {
+        tabs.setFont(DesignUtils.BUTTON_FONT);
+        tabs.setBackground(new Color(231, 240, 245));
+        tabs.setForeground(DesignUtils.TEXT_COLOR);
+        tabs.setBorder(BorderFactory.createEmptyBorder());
+    }
+
+    public static JPanel createActionCard(String title, String description, JButton action) {
+        JPanel card = new JPanel(new GridBagLayout());
+        card.setBackground(DesignUtils.SURFACE_COLOR);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(DesignUtils.BORDER_COLOR),
+            BorderFactory.createEmptyBorder(22, 22, 22, 22)));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+
+        JLabel heading = new JLabel(title);
+        heading.setFont(DesignUtils.SUBTITLE_FONT);
+        heading.setForeground(DesignUtils.TEXT_COLOR);
+        card.add(heading, gbc);
+
+        gbc.gridy = 1;
+        gbc.weighty = 1;
+        gbc.insets = new Insets(10, 0, 20, 0);
+        JLabel details = new JLabel("<html><body style='width:190px'>" + description + "</body></html>");
+        details.setFont(DesignUtils.LABEL_FONT);
+        details.setForeground(DesignUtils.MUTED_TEXT_COLOR);
+        card.add(details, gbc);
+
+        gbc.gridy = 2;
+        gbc.weighty = 0;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        card.add(action, gbc);
+        return card;
+    }
     public static JLabel createTitleLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Arial", Font.BOLD, 24));
@@ -92,6 +151,7 @@ public class UIFactory {
         btn.setForeground(Color.WHITE);
         btn.setCursor(DesignUtils.HAND_CURSOR);
         btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createEmptyBorder(9, 18, 9, 18));
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
         return btn;
     }

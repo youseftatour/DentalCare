@@ -15,7 +15,8 @@ public class SecretaryDashboard extends JFrame {
     public SecretaryDashboard(User user) {
         this.user = user;
         setTitle("Secretary Dashboard");
-        setSize(800, 600);
+        setSize(920, 650);
+        setMinimumSize(new Dimension(780, 580));
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -23,15 +24,22 @@ public class SecretaryDashboard extends JFrame {
         mainPanel.setLayout(new BorderLayout());
         setContentPane(mainPanel);
 
-        JLabel title = UIFactory.createLabel("Welcome, Secretary " + user.getUsername());
+        JPanel heading = new JPanel();
+        heading.setOpaque(false);
+        heading.setLayout(new BoxLayout(heading, BoxLayout.Y_AXIS));
+        heading.setBorder(BorderFactory.createEmptyBorder(32, 44, 12, 44));
+        JLabel title = UIFactory.createLabel("Welcome, " + user.getUsername());
         title.setFont(DesignUtils.TITLE_FONT);
-        title.setHorizontalAlignment(SwingConstants.CENTER);
-        mainPanel.add(title, BorderLayout.NORTH);
+        JLabel subtitle = UIFactory.createLabel("Secretary workspace");
+        subtitle.setForeground(new Color(215, 227, 233));
+        heading.add(title);
+        heading.add(Box.createVerticalStrut(6));
+        heading.add(subtitle);
+        mainPanel.add(heading, BorderLayout.NORTH);
 
-        JPanel centerPanel = new JPanel();
+        JPanel centerPanel = new JPanel(new GridLayout(2, 2, 18, 18));
         centerPanel.setOpaque(false);
-        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        centerPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
+        centerPanel.setBorder(BorderFactory.createEmptyBorder(20, 44, 48, 44));
         JButton addPatientBtn = UIFactory.createButton("Add Patient");
 
         JButton bookBtn = UIFactory.createButton("Book Appointment");
@@ -43,14 +51,14 @@ public class SecretaryDashboard extends JFrame {
         btnManageAppointments.addActionListener(e -> openAppointmentManagementForm());
         addPatientBtn.addActionListener(e -> openAddPatientForm());
 
-        centerPanel.add(Box.createVerticalStrut(20));
-        centerPanel.add(addPatientBtn);
-        centerPanel.add(Box.createVerticalStrut(20));
-        centerPanel.add(bookBtn);
-        centerPanel.add(Box.createVerticalStrut(20));
-        centerPanel.add(inventoryBtn);
-        centerPanel.add(Box.createVerticalStrut(20));
-        centerPanel.add(btnManageAppointments);
+        centerPanel.add(UIFactory.createActionCard("Patients",
+            "Register a new patient and capture insurance details.", addPatientBtn));
+        centerPanel.add(UIFactory.createActionCard("Appointments",
+            "Book a duration-aware appointment with available staff.", bookBtn));
+        centerPanel.add(UIFactory.createActionCard("Inventory",
+            "Review stock levels and maintain clinic supplies.", inventoryBtn));
+        centerPanel.add(UIFactory.createActionCard("Schedule management",
+            "Update, reschedule, and manage existing appointments.", btnManageAppointments));
 
 
         mainPanel.add(centerPanel, BorderLayout.CENTER);

@@ -36,10 +36,11 @@ public class ManageTreatmentPlansForm extends JFrame {
         }, 0);
 
         table = new JTable(model);
-        table.setRowHeight(25);
-        table.setFont(DesignUtils.LABEL_FONT);
-        table.getTableHeader().setFont(DesignUtils.BUTTON_FONT);
+        UIFactory.styleTable(table);
         JScrollPane scroll = new JScrollPane(table);
+        scroll.setBorder(BorderFactory.createLineBorder(DesignUtils.BORDER_COLOR));
+
+        title.setBorder(BorderFactory.createEmptyBorder(20, 20, 14, 20));
 
         add(title, BorderLayout.NORTH);
         add(scroll, BorderLayout.CENTER);

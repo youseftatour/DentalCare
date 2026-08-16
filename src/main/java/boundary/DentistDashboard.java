@@ -4,6 +4,7 @@ import control.DentistController;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.view.JasperViewer;
 import utils.UIFactory;
+import utils.DesignUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,14 +20,16 @@ public class DentistDashboard extends JFrame {
 
         setTitle("Dentist Dashboard");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(500, 400);
+        setSize(940, 570);
+        setMinimumSize(new Dimension(800, 520));
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(10, 10));
+        setLayout(new BorderLayout(20, 20));
         setContentPane(new utils.GradientPanel());
 
         JLabel title = UIFactory.createLabel("Dentist Dashboard");
-        title.setFont(new Font("Arial", Font.BOLD, 24));
+        title.setFont(DesignUtils.TITLE_FONT);
         title.setHorizontalAlignment(SwingConstants.CENTER);
+        title.setBorder(BorderFactory.createEmptyBorder(34, 20, 6, 20));
 
         JButton createPlanBtn = UIFactory.createButton("Create Treatment Plan");
         JButton managePlansBtn = UIFactory.createButton("Manage Treatment Plans");
@@ -36,13 +39,16 @@ public class DentistDashboard extends JFrame {
         managePlansBtn.addActionListener(e -> new ManageTreatmentPlansForm(dentistId));
         reportBtn.addActionListener(e -> generateTreatmentProgressReport());
 
-        JPanel btnPanel = new JPanel(new GridLayout(3, 1, 20, 20));
+        JPanel btnPanel = new JPanel(new GridLayout(1, 3, 18, 0));
         btnPanel.setOpaque(false);
-        btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 60, 30, 60));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(24, 42, 48, 42));
 
-        btnPanel.add(createPlanBtn);
-        btnPanel.add(managePlansBtn);
-        btnPanel.add(reportBtn);
+        btnPanel.add(UIFactory.createActionCard("Create plan",
+            "Start a treatment plan for a selected patient.", createPlanBtn));
+        btnPanel.add(UIFactory.createActionCard("Manage plans",
+            "Review your treatment plans and their current status.", managePlansBtn));
+        btnPanel.add(UIFactory.createActionCard("Progress report",
+            "Generate the latest treatment-progress report.", reportBtn));
 
         add(title, BorderLayout.NORTH);
         add(btnPanel, BorderLayout.CENTER);
