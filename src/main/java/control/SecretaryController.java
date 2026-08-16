@@ -7,6 +7,7 @@ import entity.StaffMember;
 import repository.InventoryRepository;
 import repository.AppointmentRepository;
 import repository.PatientRepository;
+import service.AppointmentSchedulingService;
 import utils.DatabaseManager;
 
 import java.sql.Connection;
@@ -34,6 +35,7 @@ public class SecretaryController {
     private final InventoryRepository inventoryRepository = new InventoryRepository();
     private final AppointmentRepository appointmentRepository = new AppointmentRepository();
     private final PatientRepository patientRepository = new PatientRepository();
+    private final AppointmentSchedulingService schedulingService = new AppointmentSchedulingService();
 
     public boolean addInventoryItem(InventoryItem item) {
         if (item == null || item.getQuantity() < 0 || item.getLowStockThreshold() < 0) {
@@ -491,13 +493,12 @@ public class SecretaryController {
     public boolean bookAppointment(String patientId, String treatmentName, String staffId,
                                    LocalDate date, LocalTime time, double cost) {
 
-        if (patientId == null || patientId.isBlank()
-                || treatmentName == null || treatmentName.isBlank()
-                || date == null || time == null || cost < 0) {
+        if (!schedulingService.isValidRequest(patientId, treatmentName, staffId, date, time,
+                cost, AppointmentSchedulingService.DEFAULT_DURATION_MINUTES)) {
             return false;
         }
 
-        if (LocalDateTime.of(date, time).isBefore(LocalDateTime.now())) {
+        if (schedulingService.isInPast(date, time)) {
             return false;
         }
 
@@ -767,57 +768,9 @@ public class SecretaryController {
 
     private boolean isStaffAvailable(String staffId, LocalDate date, LocalTime candidateStart,
                                      int durationMinutes, Integer excludedAppointmentId) {
-
-        StringBuilder sql = new StringBuilder("""
-            SELECT AppointmentID, AppointmentTime
-            FROM TblAppointments
-            WHERE AppointmentDate = ?
-              AND (Status IS NULL OR (Status <> 'Cancelled' AND Status <> 'Canceled'))
-            """);
-
-        boolean filterByStaff = staffId != null && !staffId.isBlank();
-        if (filterByStaff) {
-            sql.append(" AND AssignedMedicalStaff = ?");
-        }
-
-        if (excludedAppointmentId != null) {
-            sql.append(" AND AppointmentID <> ?");
-        }
-
-        LocalTime candidateEnd = candidateStart.plusMinutes(durationMinutes);
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
-
-            int index = 1;
-            stmt.setDate(index++, Date.valueOf(date));
-
-            if (filterByStaff) {
-                stmt.setString(index++, staffId);
-            }
-
-            if (excludedAppointmentId != null) {
-                stmt.setInt(index, excludedAppointmentId);
-            }
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    Time existingTime = rs.getTime("AppointmentTime");
-                    if (existingTime == null) {
-                        continue;
-                    }
-
-                    LocalTime existingStart = existingTime.toLocalTime();
-                    LocalTime existingEnd = existingStart.plusMinutes(SLOT_STEP_MINUTES);
-
-                    if (overlaps(candidateStart, candidateEnd, existingStart, existingEnd)) {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-
+        try {
+            return !schedulingService.hasConflict(candidateStart, durationMinutes,
+                appointmentRepository.findStaffAppointments(staffId, date), excludedAppointmentId);
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -855,11 +808,6 @@ public class SecretaryController {
         }
 
         return null;
-    }
-
-    private static boolean overlaps(LocalTime start1, LocalTime end1,
-                                    LocalTime start2, LocalTime end2) {
-        return start1.isBefore(end2) && start2.isBefore(end1);
     }
 
     private static LocalTime roundUpToSlot(LocalTime time) {

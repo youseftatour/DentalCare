@@ -4,6 +4,7 @@ import entity.Patient;
 import entity.Treatment;
 import repository.AppointmentRepository;
 import repository.PatientRepository;
+import service.AppointmentSchedulingService;
 
 import java.sql.Date;
 import java.sql.SQLException;
@@ -18,10 +19,12 @@ import java.util.ArrayList;
 public class PatientController {
     private final PatientRepository patientRepository;
     private final AppointmentRepository appointmentRepository;
+    private final AppointmentSchedulingService schedulingService;
 
     public PatientController() {
         patientRepository = new PatientRepository();
         appointmentRepository = new AppointmentRepository();
+        schedulingService = new AppointmentSchedulingService();
     }
 
     public Patient getPatientByID(int id) {
@@ -67,7 +70,14 @@ public class PatientController {
         try {
             LocalDate date = LocalDate.parse(newDate);
             LocalTime time = parseTime(newTime);
-            if (LocalDateTime.of(date, time).isBefore(LocalDateTime.now())) {
+            if (schedulingService.isInPast(date, time)) {
+                return false;
+            }
+            String staffId = appointmentRepository.findAssignedStaff(appointmentId);
+            if (staffId != null && !staffId.isBlank()
+                    && schedulingService.hasConflict(time,
+                        AppointmentSchedulingService.DEFAULT_DURATION_MINUTES,
+                        appointmentRepository.findStaffAppointments(staffId, date), appointmentId)) {
                 return false;
             }
             return appointmentRepository.reschedule(appointmentId, date, time);
@@ -100,7 +110,7 @@ public class PatientController {
         }
         try {
             LocalTime appointmentTime = parseTime(time);
-            if (LocalDateTime.of(date.toLocalDate(), appointmentTime).isBefore(LocalDateTime.now())) {
+            if (schedulingService.isInPast(date.toLocalDate(), appointmentTime)) {
                 return false;
             }
             return appointmentRepository.insert(patientId, date, appointmentTime, reason, treatmentName);
