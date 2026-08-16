@@ -5,6 +5,7 @@ import entity.InventoryItem;
 import entity.Patient;
 import entity.Supplier;
 import entity.TreatmentPlan;
+import repository.InventoryRepository;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.view.JasperViewer;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ManagerController {
+    private final InventoryRepository inventoryRepository = new InventoryRepository();
 
     public boolean personIdExists(String id) {
         String sql = "SELECT 1 FROM TblPersons WHERE PersonId = ?";
@@ -341,16 +343,9 @@ public class ManagerController {
             return;
         }
 
-        String sql = "UPDATE TblInventoryItems SET Quantity = ? WHERE ItemID = ?";
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, quantity);
-            stmt.setInt(2, itemId);
-            stmt.executeUpdate();
-
-        } catch (Exception e) {
+        try {
+            inventoryRepository.updateQuantity(itemId, quantity);
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -360,54 +355,20 @@ public class ManagerController {
             return;
         }
 
-        String sql = "UPDATE TblInventoryItems SET LowStockAlertThreshold = ? WHERE ItemID = ?";
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, newThreshold);
-            stmt.setInt(2, itemId);
-            stmt.executeUpdate();
-
-        } catch (Exception e) {
+        try {
+            inventoryRepository.updateLowStockThreshold(itemId, newThreshold);
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
     public ArrayList<InventoryItem> getAllInventoryItems() {
-        ArrayList<InventoryItem> list = new ArrayList<>();
-
-        String sql = """
-            SELECT ItemID, [Item Name], Description, Quantity, SupplierInformation,
-                   ExpirationDate, SerialNumber, LowStockAlertThreshold
-            FROM TblInventoryItems
-            ORDER BY [Item Name]
-            """;
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                Date expiry = rs.getDate("ExpirationDate");
-
-                list.add(new InventoryItem(
-                    rs.getInt("ItemID"),
-                    rs.getString("Item Name"),
-                    rs.getString("Description"),
-                    rs.getInt("Quantity"),
-                    rs.getString("SupplierInformation"),
-                    expiry != null ? expiry.toLocalDate() : null,
-                    rs.getString("SerialNumber"),
-                    rs.getInt("LowStockAlertThreshold")
-                ));
-            }
-
-        } catch (Exception e) {
+        try {
+            return inventoryRepository.findAll();
+        } catch (SQLException e) {
             e.printStackTrace();
+            return new ArrayList<>();
         }
-
-        return list;
     }
 
     public boolean addInventoryItem(InventoryItem item) {
@@ -415,47 +376,18 @@ public class ManagerController {
             return false;
         }
 
-        String sql = """
-            INSERT INTO TblInventoryItems
-            ([Item Name], Description, Quantity, SupplierInformation, ExpirationDate, SerialNumber, LowStockAlertThreshold)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """;
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, item.getItemName());
-            stmt.setString(2, item.getDescription());
-            stmt.setInt(3, item.getQuantity());
-            stmt.setString(4, item.getSupplierInformation());
-
-            if (item.getExpiryDate() != null) {
-                stmt.setDate(5, Date.valueOf(item.getExpiryDate()));
-            } else {
-                stmt.setNull(5, Types.DATE);
-            }
-
-            stmt.setString(6, item.getSerialNumber());
-            stmt.setInt(7, item.getLowStockThreshold());
-
-            return stmt.executeUpdate() > 0;
-
-        } catch (Exception e) {
+        try {
+            return inventoryRepository.insert(item);
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
     }
 
     public boolean deleteInventoryItem(int itemId) {
-        String sql = "DELETE FROM TblInventoryItems WHERE ItemID = ?";
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, itemId);
-            return stmt.executeUpdate() > 0;
-
-        } catch (Exception e) {
+        try {
+            return inventoryRepository.deleteById(itemId);
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }

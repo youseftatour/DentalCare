@@ -4,6 +4,7 @@ import entity.Appointment;
 import entity.InventoryItem;
 import entity.Patient;
 import entity.StaffMember;
+import repository.InventoryRepository;
 import utils.DatabaseManager;
 
 import java.sql.Connection;
@@ -28,36 +29,15 @@ public class SecretaryController {
     private static final LocalTime OPENING_TIME = LocalTime.of(8, 0);
     private static final LocalTime CLOSING_TIME = LocalTime.of(17, 0);
     private static final int SLOT_STEP_MINUTES = 30;
+    private final InventoryRepository inventoryRepository = new InventoryRepository();
 
     public boolean addInventoryItem(InventoryItem item) {
         if (item == null || item.getQuantity() < 0 || item.getLowStockThreshold() < 0) {
             return false;
         }
 
-        String sql = """
-            INSERT INTO TblInventoryItems
-            ([Item Name], Description, Quantity, SupplierInformation, ExpirationDate, SerialNumber, LowStockAlertThreshold)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """;
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, item.getItemName());
-            stmt.setString(2, item.getDescription());
-            stmt.setInt(3, item.getQuantity());
-            stmt.setString(4, item.getSupplierInformation());
-
-            if (item.getExpiryDate() != null) {
-                stmt.setDate(5, Date.valueOf(item.getExpiryDate()));
-            } else {
-                stmt.setNull(5, Types.DATE);
-            }
-
-            stmt.setString(6, item.getSerialNumber());
-            stmt.setInt(7, item.getLowStockThreshold());
-            return stmt.executeUpdate() > 0;
-
+        try {
+            return inventoryRepository.insert(item);
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -65,14 +45,8 @@ public class SecretaryController {
     }
 
     public boolean deleteInventoryItem(int itemId) {
-        String sql = "DELETE FROM TblInventoryItems WHERE ItemID = ?";
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, itemId);
-            return stmt.executeUpdate() > 0;
-
+        try {
+            return inventoryRepository.deleteById(itemId);
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -384,54 +358,39 @@ public class SecretaryController {
             return;
         }
 
-        String sql = "UPDATE TblInventoryItems SET Quantity = ? WHERE ItemID = ?";
+        try {
+            inventoryRepository.updateQuantity(itemId, quantity);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+    public void updateInventoryQuantity(int itemId, int newQuantity) {
+        updateInventoryQuantity(itemId, Integer.toString(newQuantity));
+    }
 
-            stmt.setInt(1, quantity);
-            stmt.setInt(2, itemId);
-            stmt.executeUpdate();
-
+    public void updateInventoryThreshold(int itemId, int threshold) {
+        if (threshold < 0) {
+            return;
+        }
+        try {
+            inventoryRepository.updateLowStockThreshold(itemId, threshold);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
     public ArrayList<InventoryItem> getAllInventoryItems() {
-        ArrayList<InventoryItem> list = new ArrayList<>();
-
-        String sql = """
-            SELECT ItemID, [Item Name], Description, Quantity, SupplierInformation,
-                   ExpirationDate, SerialNumber, LowStockAlertThreshold
-            FROM TblInventoryItems
-            ORDER BY [Item Name]
-            """;
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                Date expiry = rs.getDate("ExpirationDate");
-
-                list.add(new InventoryItem(
-                    rs.getInt("ItemID"),
-                    rs.getString("Item Name"),
-                    rs.getString("Description"),
-                    rs.getInt("Quantity"),
-                    rs.getString("SupplierInformation"),
-                    expiry != null ? expiry.toLocalDate() : null,
-                    rs.getString("SerialNumber"),
-                    rs.getInt("LowStockAlertThreshold")
-                ));
-            }
-
+        try {
+            return inventoryRepository.findAll();
         } catch (SQLException e) {
             e.printStackTrace();
+            return new ArrayList<>();
         }
+    }
 
-        return list;
+    public ArrayList<InventoryItem> getInventoryItems() {
+        return getAllInventoryItems();
     }
 
     public ArrayList<Appointment> getUpcomingAppointments() {

@@ -1,6 +1,5 @@
 package boundary;
 
-import utils.DatabaseManager;
 import utils.DesignUtils;
 import utils.UIFactory;
 
@@ -12,9 +11,7 @@ import entity.InventoryItem;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.sql.*;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.regex.Pattern;
 
@@ -73,23 +70,13 @@ public class InventoryTrackingForm extends JFrame {
                 int col = e.getColumn();
                 int itemId = Integer.parseInt(model.getValueAt(row, 0).toString());
 
-                try (Connection conn = DatabaseManager.getConnection()) {
-                    if (col == 3) { // Quantity updated
+                try {
+                    if (col == 3) {
                         int newQty = Integer.parseInt(model.getValueAt(row, 3).toString());
-                        PreparedStatement stmt = conn.prepareStatement(
-                            "UPDATE TblInventoryItems SET Quantity = ? WHERE ItemID = ?"
-                        );
-                        stmt.setInt(1, newQty);
-                        stmt.setInt(2, itemId);
-                        stmt.executeUpdate();
-                    } else if (col == 7) { // Threshold updated
+                        secretaryController.updateInventoryQuantity(itemId, newQty);
+                    } else if (col == 7) {
                         int newThreshold = Integer.parseInt(model.getValueAt(row, 7).toString());
-                        PreparedStatement stmt = conn.prepareStatement(
-                            "UPDATE TblInventoryItems SET LowStockAlertThreshold = ? WHERE ItemID = ?"
-                        );
-                        stmt.setInt(1, newThreshold);
-                        stmt.setInt(2, itemId);
-                        stmt.executeUpdate();
+                        secretaryController.updateInventoryThreshold(itemId, newThreshold);
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -134,25 +121,6 @@ public class InventoryTrackingForm extends JFrame {
         searchPanel.add(searchField);
         searchPanel.add(searchBtn);
 
-        // Table model listener for quantity updates
-        table.getModel().addTableModelListener(e -> {
-            if (e.getType() == TableModelEvent.UPDATE && e.getColumn() == 3) {
-                int row = e.getFirstRow();
-                int itemId = Integer.parseInt(model.getValueAt(row, 0).toString());
-                String newQty = model.getValueAt(row, 3).toString();
-
-                try (Connection conn = DatabaseManager.getConnection();
-                     PreparedStatement stmt = conn.prepareStatement(
-                             "UPDATE TblInventoryItems SET Quantity = ? WHERE ItemID = ?")) {
-                    stmt.setString(1, newQty);
-                    stmt.setInt(2, itemId);
-                    stmt.executeUpdate();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Failed to update quantity.");
-                }
-            }
-        });
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         buttonPanel.setOpaque(false);
         JButton addBtn = UIFactory.createButton("Add Item");
@@ -235,29 +203,14 @@ public class InventoryTrackingForm extends JFrame {
 
     private void loadInventoryItems() {
         model.setRowCount(0);
-        String sql = """
-            SELECT ItemID, [Item Name], Description, Quantity, SupplierInformation,
-                   ExpirationDate, SerialNumber, LowStockAlertThreshold
-            FROM TblInventoryItems
-        """;
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
+        try {
+            for (InventoryItem item : secretaryController.getInventoryItems()) {
                 model.addRow(new Object[]{
-                        rs.getInt("ItemID"),
-                        rs.getString("Item Name"),
-                        rs.getString("Description"),
-                        rs.getString("Quantity"),
-                        rs.getString("SupplierInformation"),
-                        rs.getDate("ExpirationDate") != null ? rs.getDate("ExpirationDate").toString() : "",
-                        rs.getString("SerialNumber"),
-                        rs.getString("LowStockAlertThreshold")
+                        item.getItemId(), item.getItemName(), item.getDescription(), item.getQuantity(),
+                        item.getSupplierInformation(), item.getExpiryDate() == null ? "" : item.getExpiryDate(),
+                        item.getSerialNumber(), item.getLowStockThreshold()
                 });
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
