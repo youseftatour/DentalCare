@@ -4,6 +4,7 @@ import com.toedter.calendar.JDateChooser;
 import control.SecretaryController;
 import utils.DesignUtils;
 import utils.UIFactory;
+import service.DomainValidator;
 
 import javax.swing.*;
 import java.awt.*;
@@ -77,19 +78,11 @@ public class AddPatientForm extends JFrame {
         String policy = policyField.getText().trim();
         Date dob = dobChooser.getDate();
 
-        if (id.isEmpty() || first.isEmpty() || last.isEmpty() || phone.isEmpty() || email.isEmpty() ||
-            identifier.isEmpty() || policy.isEmpty() || dob == null || insurance == null) {
-            JOptionPane.showMessageDialog(this, "Please complete all fields.");
-            return;
-        }
-
-        if (!id.matches("\\d{1,9}")) {
-            JOptionPane.showMessageDialog(this, "ID must be numeric and up to 9 digits.");
-            return;
-        }
-
-        if (identifier.length() != 5) {
-            JOptionPane.showMessageDialog(this, "Identifier must be exactly 5 characters.");
+        java.sql.Date sqlDob = dob == null ? null : new java.sql.Date(dob.getTime());
+        String validationError = DomainValidator.validatePatient(id, first, last, phone, email,
+            sqlDob, identifier, insurance, policy);
+        if (validationError != null) {
+            JOptionPane.showMessageDialog(this, validationError);
             return;
         }
 
@@ -109,7 +102,7 @@ public class AddPatientForm extends JFrame {
         }
 
         boolean success = controller.addNewPatient(id, first, last, phone, email,
-                new java.sql.Date(dob.getTime()), identifier, insurance, policy);
+                sqlDob, identifier, insurance, policy);
 
         if (success) {
             JOptionPane.showMessageDialog(this, "Patient added successfully.");

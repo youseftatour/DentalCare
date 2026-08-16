@@ -13,6 +13,7 @@ import net.sf.jasperreports.view.JasperViewer;
 import utils.DatabaseManager;
 import utils.InventoryParser;
 import utils.TransactionUtils;
+import service.DomainValidator;
 
 import java.io.File;
 import java.io.InputStream;
@@ -82,7 +83,8 @@ public class ManagerController {
     public boolean addTreatmentPlan(int patientId, String status, LocalDate startDate,
                                     LocalDate estimatedEndDate, String createdByDentist) {
 
-        if (startDate == null || status == null || status.isBlank()) {
+        if (!DomainValidator.isValidTreatmentPlan(startDate, estimatedEndDate)
+                || status == null || status.isBlank()) {
             return false;
         }
 
@@ -189,6 +191,11 @@ public class ManagerController {
     public boolean editStaffMember(String id, String firstName, String lastName, String phone, String email,
                                    Date dob, String qualifications, String specialization, String role) {
 
+        if (DomainValidator.validateStaff(id, firstName, lastName, phone, email, dob,
+                qualifications, specialization, role) != null) {
+            return false;
+        }
+
         String updatePerson = """
             UPDATE TblPersons
             SET FirstName = ?, LastName = ?, PhoneNumber = ?, Email = ?, DateOfBirth = ?
@@ -242,6 +249,11 @@ public class ManagerController {
 
     public boolean addStaffMember(String id, String firstName, String lastName, String phone, String email,
                                   Date dob, String qualifications, String specialization, String role) {
+
+        if (DomainValidator.validateStaff(id, firstName, lastName, phone, email, dob,
+                qualifications, specialization, role) != null || personIdExists(id)) {
+            return false;
+        }
 
         String sqlPerson = """
             INSERT INTO TblPersons (PersonId, FirstName, LastName, PhoneNumber, Email, DateOfBirth)
@@ -374,7 +386,7 @@ public class ManagerController {
     }
 
     public boolean addInventoryItem(InventoryItem item) {
-        if (item == null || item.getQuantity() < 0 || item.getLowStockThreshold() < 0) {
+        if (!DomainValidator.isValidInventoryItem(item)) {
             return false;
         }
 
@@ -485,7 +497,8 @@ public class ManagerController {
     public boolean addTreatmentPlan(String patientId, LocalDate startDate,
                                     LocalDate estimatedEndDate, String createdBy) {
 
-        if (patientId == null || patientId.isBlank() || startDate == null) {
+        if (!DomainValidator.isValidId(patientId)
+                || !DomainValidator.isValidTreatmentPlan(startDate, estimatedEndDate)) {
             return false;
         }
 

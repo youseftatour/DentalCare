@@ -12,6 +12,7 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
+import service.DomainValidator;
 
 public class CreateTreatmentPlanForm extends JFrame {
     private JComboBox<Patient> patientCombo;
@@ -68,6 +69,12 @@ public class CreateTreatmentPlanForm extends JFrame {
         // Convert java.util.Date to java.sql.Date
         java.sql.Date sqlStart = new java.sql.Date(utilStart.getTime());
         java.sql.Date sqlEnd = new java.sql.Date(utilEnd.getTime());
+
+        if (!DomainValidator.isValidTreatmentPlan(sqlStart.toLocalDate(), sqlEnd.toLocalDate())) {
+            JOptionPane.showMessageDialog(this,
+                "Estimated completion date cannot be before the start date.");
+            return;
+        }
 
         boolean success = controller.createTreatmentPlan(
                 selected.getId(),

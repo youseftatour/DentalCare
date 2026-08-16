@@ -13,6 +13,7 @@ import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.regex.Pattern;
+import service.DomainValidator;
 
 public class ManageStaffForm extends JPanel {
     private final ManagerController managerController = new ManagerController();
@@ -179,8 +180,11 @@ public class ManageStaffForm extends JPanel {
             String specialization = specializationField.getText().trim();
             String role = roleCombo.getSelectedItem().toString();
 
-            if (id.isEmpty() || firstName.isEmpty() || lastName.isEmpty() || selectedDate == null) {
-                JOptionPane.showMessageDialog(this, "Please fill in all required fields.");
+            Date dob = selectedDate == null ? null : new Date(selectedDate.getTime());
+            String validationError = DomainValidator.validateStaff(id, firstName, lastName,
+                phone, email, dob, qualifications, specialization, role);
+            if (validationError != null) {
+                JOptionPane.showMessageDialog(this, validationError);
                 return;
             }
 
@@ -189,7 +193,6 @@ public class ManageStaffForm extends JPanel {
                 return;
             }
 
-            Date dob = new Date(selectedDate.getTime());
             boolean success = isEdit
                     ? managerController.editStaffMember(id, firstName, lastName, phone, email, dob, qualifications, specialization, role)
                     : managerController.addStaffMember(id, firstName, lastName, phone, email, dob, qualifications, specialization, role);

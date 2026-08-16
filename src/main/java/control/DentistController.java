@@ -7,6 +7,7 @@ import repository.PatientRepository;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import utils.DatabaseManager;
+import service.DomainValidator;
 
 import java.io.InputStream;
 import java.sql.Connection;
@@ -32,7 +33,9 @@ public class DentistController {
     }
 
     public boolean createTreatmentPlan(int patientId, Date startDate, Date endDate, String dentistId) {
-        if (startDate == null || endDate == null || dentistId == null || dentistId.isBlank()) {
+        if (startDate == null || endDate == null || !DomainValidator.isValidId(dentistId)
+                || !DomainValidator.isValidTreatmentPlan(
+                    startDate.toLocalDate(), endDate.toLocalDate())) {
             return false;
         }
 

@@ -8,6 +8,7 @@ import repository.InventoryRepository;
 import repository.AppointmentRepository;
 import repository.PatientRepository;
 import service.AppointmentSchedulingService;
+import service.DomainValidator;
 import utils.DatabaseManager;
 import utils.TransactionUtils;
 
@@ -39,7 +40,7 @@ public class SecretaryController {
     private final AppointmentSchedulingService schedulingService = new AppointmentSchedulingService();
 
     public boolean addInventoryItem(InventoryItem item) {
-        if (item == null || item.getQuantity() < 0 || item.getLowStockThreshold() < 0) {
+        if (!DomainValidator.isValidInventoryItem(item)) {
             return false;
         }
 
@@ -62,6 +63,12 @@ public class SecretaryController {
 
     public boolean addNewPatient(String id, String firstName, String lastName, String phone, String email,
                                  Date dob, String identifier, String insurance, String policy) {
+
+        if (DomainValidator.validatePatient(id, firstName, lastName, phone, email, dob,
+                identifier, insurance, policy) != null
+                || patientIdExists(id) || identifierExists(identifier) || policyNumberExists(policy)) {
+            return false;
+        }
 
         String sqlPersons = """
             INSERT INTO TblPersons (PersonId, FirstName, LastName, PhoneNumber, Email, DateOfBirth)
