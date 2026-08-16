@@ -12,6 +12,7 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.view.JasperViewer;
 import utils.DatabaseManager;
 import utils.InventoryParser;
+import utils.TransactionUtils;
 
 import javax.swing.JOptionPane;
 import java.io.File;
@@ -163,12 +164,12 @@ public class ManagerController {
                  PreparedStatement ps2 = conn.prepareStatement(deletePerson)) {
 
                 ps1.setString(1, id);
-                ps1.executeUpdate();
+                int deletedStaff = ps1.executeUpdate();
 
                 ps2.setString(1, id);
                 int deletedPerson = ps2.executeUpdate();
 
-                if (deletedPerson != 1) {
+                if (deletedStaff != 1 || deletedPerson != 1) {
                     conn.rollback();
                     return false;
                 }
@@ -707,24 +708,10 @@ public class ManagerController {
     }
 
     private static void rollbackQuietly(Connection conn) {
-        if (conn == null) {
-            return;
-        }
-
-        try {
-            conn.rollback();
-        } catch (SQLException ignored) {
-        }
+        TransactionUtils.rollbackQuietly(conn);
     }
 
     private static void closeQuietly(Connection conn) {
-        if (conn == null) {
-            return;
-        }
-
-        try {
-            conn.close();
-        } catch (SQLException ignored) {
-        }
+        TransactionUtils.restoreAutoCommitAndClose(conn);
     }
 }

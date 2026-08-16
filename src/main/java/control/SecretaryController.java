@@ -9,6 +9,7 @@ import repository.AppointmentRepository;
 import repository.PatientRepository;
 import service.AppointmentSchedulingService;
 import utils.DatabaseManager;
+import utils.TransactionUtils;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -850,25 +851,11 @@ public class SecretaryController {
     }
 
     private static void rollbackQuietly(Connection conn) {
-        if (conn == null) {
-            return;
-        }
-
-        try {
-            conn.rollback();
-        } catch (SQLException ignored) {
-        }
+        TransactionUtils.rollbackQuietly(conn);
     }
 
     private static void closeQuietly(Connection conn) {
-        if (conn == null) {
-            return;
-        }
-
-        try {
-            conn.close();
-        } catch (SQLException ignored) {
-        }
+        TransactionUtils.restoreAutoCommitAndClose(conn);
     }
 
     private static final class AppointmentSlot {
