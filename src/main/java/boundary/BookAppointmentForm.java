@@ -104,6 +104,8 @@ public class BookAppointmentForm extends JFrame {
                 }
             }
         });
+        treatmentDropdown.addActionListener(e -> reloadAvailableTimes());
+        staffDropdown.addActionListener(e -> reloadAvailableTimes());
 
         submitBtn.addActionListener(this::bookAppointment);
 
@@ -169,9 +171,24 @@ public class BookAppointmentForm extends JFrame {
 
     private void loadAvailableTimes(LocalDate date) {
         timeDropdown.removeAllItems();
-        ArrayList<LocalTime> available = controller.getAvailableTimeSlots(date, false, 30);
+        String treatment = (String) treatmentDropdown.getSelectedItem();
+        String staffDisplay = (String) staffDropdown.getSelectedItem();
+        Integer staffId = staffMap.get(staffDisplay);
+        int duration = controller.getTreatmentDuration(treatment);
+        if (staffId == null || duration <= 0) {
+            return;
+        }
+        ArrayList<LocalTime> available = controller.getAvailableTimeSlots(
+            date, String.valueOf(staffId), false, duration);
         for (LocalTime t : available) {
             timeDropdown.addItem(t.toString());
+        }
+    }
+
+    private void reloadAvailableTimes() {
+        Date selectedDate = dateChooser.getDate();
+        if (selectedDate != null) {
+            loadAvailableTimes(selectedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
         }
     }
 

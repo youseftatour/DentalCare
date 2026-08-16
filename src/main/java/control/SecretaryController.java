@@ -195,7 +195,7 @@ public class SecretaryController {
 
         if (current.staffId != null && !current.staffId.isBlank()
                 && !isStaffAvailable(current.staffId, newDate, current.time,
-                                     SLOT_STEP_MINUTES, appointmentId)) {
+                                     getAppointmentDuration(appointmentId), appointmentId)) {
             return false;
         }
 
@@ -460,6 +460,15 @@ public class SecretaryController {
         return list;
     }
 
+    public int getTreatmentDuration(String treatmentName) {
+        try {
+            return patientRepository.findTreatmentDuration(treatmentName);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
     public List<StaffMember> getAllStaffMembers() {
         List<StaffMember> allStaff = new ArrayList<>();
 
@@ -493,8 +502,10 @@ public class SecretaryController {
     public boolean bookAppointment(String patientId, String treatmentName, String staffId,
                                    LocalDate date, LocalTime time, double cost) {
 
+        int durationMinutes = getTreatmentDuration(treatmentName);
+
         if (!schedulingService.isValidRequest(patientId, treatmentName, staffId, date, time,
-                cost, AppointmentSchedulingService.DEFAULT_DURATION_MINUTES)) {
+                cost, durationMinutes)) {
             return false;
         }
 
@@ -503,7 +514,7 @@ public class SecretaryController {
         }
 
         if (staffId != null && !staffId.isBlank()
-                && !isStaffAvailable(staffId, date, time, SLOT_STEP_MINUTES, null)) {
+                && !isStaffAvailable(staffId, date, time, durationMinutes, null)) {
             return false;
         }
 
@@ -710,7 +721,7 @@ public class SecretaryController {
 
         if (current.staffId != null && !current.staffId.isBlank()
                 && !isStaffAvailable(current.staffId, newDate, newTime,
-                                     SLOT_STEP_MINUTES, appointmentId)) {
+                                     getAppointmentDuration(appointmentId), appointmentId)) {
             return false;
         }
 
@@ -719,6 +730,15 @@ public class SecretaryController {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    private int getAppointmentDuration(int appointmentId) {
+        try {
+            return appointmentRepository.findDurationMinutes(appointmentId);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
         }
     }
 

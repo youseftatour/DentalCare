@@ -1,19 +1,17 @@
 # Recommended appointment-duration schema change
 
-The current Access schema has no duration column in either `TblTreatments` or
-`TblAppointments`. DentalCare therefore continues to use a documented 30-minute
-compatibility default in `AppointmentSchedulingService`.
+The original Access schema had no duration column in either `TblTreatments` or
+`TblAppointments`. The migration stores duration on `TblTreatments` because it
+describes the standard length of a treatment.
 
-When the schema change is approved, duration should be stored on the treatment
-because it describes the standard length of that treatment:
+Schema change:
 
 ```sql
 ALTER TABLE TblTreatments ADD COLUMN DurationMinutes INTEGER;
 ```
 
-Before making the Java application require this value, populate every existing
-treatment with a reviewed positive duration. A temporary value of 30 can be used
-only as an explicit migration default and should be checked by the clinic:
+Existing treatments were initialized with 30 minutes as an explicit migration
+default. These values should be reviewed by the clinic:
 
 ```sql
 UPDATE TblTreatments
@@ -21,7 +19,6 @@ SET DurationMinutes = 30
 WHERE DurationMinutes IS NULL;
 ```
 
-After migration, booking queries should retrieve `DurationMinutes` from
-`TblTreatments`; the scheduling service can then use it without changing its
-interval-overlap rule. This document is advisory only. No database change has
-been applied.
+Booking queries now retrieve `DurationMinutes` from `TblTreatments`; the
+scheduling service uses it without changing its interval-overlap rule. This
+migration was applied to the repository's `DentalCare_Nimbus2000s.accdb` file.

@@ -9,8 +9,6 @@ import java.time.LocalTime;
 import java.util.List;
 
 public class AppointmentSchedulingService {
-    public static final int DEFAULT_DURATION_MINUTES = 30;
-
     public boolean isValidRequest(String patientId, String treatmentName, String staffId,
                                   LocalDate date, LocalTime time, double cost, int durationMinutes) {
         return patientId != null && !patientId.isBlank()

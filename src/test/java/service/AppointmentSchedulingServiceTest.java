@@ -43,6 +43,15 @@ public class AppointmentSchedulingServiceTest {
         assertFalse(hasConflict("10:00", slot(42, "10:00", "Active"), 42));
     }
 
+    @Test
+    public void followingSlotUsesPersistedTreatmentDuration() {
+        AppointmentSlot thirtyMinuteTreatment =
+            new AppointmentSlot(1, LocalTime.of(10, 0), 30, "Active");
+
+        assertFalse(service.hasConflict(LocalTime.of(10, 30), 60,
+            List.of(thirtyMinuteTreatment), null));
+    }
+
     private boolean hasConflict(String start, AppointmentSlot existing, Integer excludedId) {
         return service.hasConflict(LocalTime.parse(start), 60, List.of(existing), excludedId);
     }

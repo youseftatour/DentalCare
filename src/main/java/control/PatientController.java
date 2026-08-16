@@ -74,9 +74,10 @@ public class PatientController {
                 return false;
             }
             String staffId = appointmentRepository.findAssignedStaff(appointmentId);
+            int durationMinutes = appointmentRepository.findDurationMinutes(appointmentId);
             if (staffId != null && !staffId.isBlank()
                     && schedulingService.hasConflict(time,
-                        AppointmentSchedulingService.DEFAULT_DURATION_MINUTES,
+                        durationMinutes,
                         appointmentRepository.findStaffAppointments(staffId, date), appointmentId)) {
                 return false;
             }
@@ -110,6 +111,10 @@ public class PatientController {
         }
         try {
             LocalTime appointmentTime = parseTime(time);
+            int durationMinutes = patientRepository.findTreatmentDuration(treatmentName);
+            if (durationMinutes <= 0) {
+                return false;
+            }
             if (schedulingService.isInPast(date.toLocalDate(), appointmentTime)) {
                 return false;
             }

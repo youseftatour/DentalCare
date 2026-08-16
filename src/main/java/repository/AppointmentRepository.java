@@ -18,12 +18,13 @@ public class AppointmentRepository {
     public List<AppointmentSlot> findStaffAppointments(String staffId, LocalDate date) throws SQLException {
         boolean filterByStaff = staffId != null && !staffId.isBlank();
         String sql = """
-            SELECT AppointmentID, AppointmentTime, Status
-            FROM TblAppointments
-            WHERE AppointmentDate = ?
+            SELECT A.AppointmentID, A.AppointmentTime, A.Status, T.DurationMinutes
+            FROM TblAppointments A
+            INNER JOIN TblTreatments T ON A.TreatmentName = T.TreatmentName
+            WHERE A.AppointmentDate = ?
             """;
         if (filterByStaff) {
-            sql += " AND AssignedMedicalStaff = ?";
+            sql += " AND A.AssignedMedicalStaff = ?";
         }
         List<AppointmentSlot> appointments = new ArrayList<>();
         try (Connection connection = DatabaseManager.getConnection();
@@ -37,7 +38,8 @@ public class AppointmentRepository {
                     Time time = resultSet.getTime("AppointmentTime");
                     if (time != null) {
                         appointments.add(new AppointmentSlot(resultSet.getInt("AppointmentID"),
-                            time.toLocalTime(), 30, resultSet.getString("Status")));
+                            time.toLocalTime(), resultSet.getInt("DurationMinutes"),
+                            resultSet.getString("Status")));
                     }
                 }
             }
@@ -52,6 +54,22 @@ public class AppointmentRepository {
             statement.setInt(1, appointmentId);
             try (var resultSet = statement.executeQuery()) {
                 return resultSet.next() ? resultSet.getString("AssignedMedicalStaff") : null;
+            }
+        }
+    }
+
+    public int findDurationMinutes(int appointmentId) throws SQLException {
+        String sql = """
+            SELECT T.DurationMinutes
+            FROM TblAppointments A
+            INNER JOIN TblTreatments T ON A.TreatmentName = T.TreatmentName
+            WHERE A.AppointmentID = ?
+            """;
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, appointmentId);
+            try (var resultSet = statement.executeQuery()) {
+                return resultSet.next() ? resultSet.getInt("DurationMinutes") : 0;
             }
         }
     }

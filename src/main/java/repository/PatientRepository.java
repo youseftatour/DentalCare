@@ -74,9 +74,10 @@ public class PatientRepository {
 
     public ArrayList<Treatment> findActiveTreatments(int patientId) throws SQLException {
         String sql = """
-            SELECT A.TreatmentName, A.Cost, A.Status
+            SELECT A.TreatmentName, A.Cost, A.Status, T.DurationMinutes
             FROM TblAppointments A
             INNER JOIN TblTreatmentPlans P ON A.TreatmentPlanID = P.TreatmentPlanID
+            INNER JOIN TblTreatments T ON A.TreatmentName = T.TreatmentName
             WHERE P.PatientID = ? AND P.Status = 'Active'
             ORDER BY A.AppointmentDate, A.AppointmentTime
             """;
@@ -87,7 +88,8 @@ public class PatientRepository {
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     treatments.add(new Treatment(resultSet.getString("TreatmentName"),
-                        resultSet.getDouble("Cost"), resultSet.getString("Status")));
+                        resultSet.getDouble("Cost"), resultSet.getString("Status"),
+                        resultSet.getInt("DurationMinutes")));
                 }
             }
         }
@@ -128,13 +130,25 @@ public class PatientRepository {
         ArrayList<Treatment> treatments = new ArrayList<>();
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(
-                 "SELECT TreatmentName FROM TblTreatments ORDER BY TreatmentName");
+                 "SELECT TreatmentName, DurationMinutes FROM TblTreatments ORDER BY TreatmentName");
              ResultSet resultSet = statement.executeQuery()) {
             while (resultSet.next()) {
-                treatments.add(new Treatment(resultSet.getString("TreatmentName"), 0.0, "Available"));
+                treatments.add(new Treatment(resultSet.getString("TreatmentName"), 0.0, "Available",
+                    resultSet.getInt("DurationMinutes")));
             }
         }
         return treatments;
+    }
+
+    public int findTreatmentDuration(String treatmentName) throws SQLException {
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                 "SELECT DurationMinutes FROM TblTreatments WHERE TreatmentName = ?")) {
+            statement.setString(1, treatmentName);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next() ? resultSet.getInt("DurationMinutes") : 0;
+            }
+        }
     }
 
 }
