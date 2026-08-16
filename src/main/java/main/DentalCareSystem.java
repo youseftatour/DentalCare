@@ -2,8 +2,10 @@ package main;
 
 import boundary.MainLoginPage;
 
+import javax.swing.SwingUtilities;
+
 public class DentalCareSystem {
     public static void main(String[] args) {
-        new MainLoginPage().setVisible(true);
+        SwingUtilities.invokeLater(() -> new MainLoginPage().setVisible(true));
     }
 }

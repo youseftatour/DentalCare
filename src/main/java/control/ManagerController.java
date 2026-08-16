@@ -7,16 +7,14 @@ import entity.Supplier;
 import entity.TreatmentPlan;
 import repository.InventoryRepository;
 import repository.PatientRepository;
-import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.view.JasperViewer;
 import utils.DatabaseManager;
 import utils.InventoryParser;
 import utils.TransactionUtils;
 import service.DomainValidator;
+import service.ReportService;
 
 import java.io.File;
-import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -30,8 +28,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ManagerController {
+    public record InventoryImportResult(boolean success, int importedCount,
+                                        int skippedCount, java.util.List<String> errors) { }
     private final InventoryRepository inventoryRepository = new InventoryRepository();
     private final PatientRepository patientRepository = new PatientRepository();
+    private final ReportService reportService = new ReportService();
 
     public boolean personIdExists(String id) {
         String sql = "SELECT 1 FROM TblPersons WHERE PersonId = ?";
@@ -529,95 +530,49 @@ public class ManagerController {
         }
     }
 
-    public boolean generateRevenueReport(String month, String year) {
+    public JasperPrint generateRevenueReport(String month, String year) throws Exception {
         HashMap<String, Object> parameters = new HashMap<>();
         parameters.put("reportMonth", month);
         parameters.put("reportYear", year);
 
-        try (InputStream reportStream =
-                     getClass().getResourceAsStream("/boundary/MonthlyRevenueReport.jasper");
-             Connection conn = DatabaseManager.getConnection()) {
-
-            if (reportStream == null) {
-                throw new IllegalStateException(
-                    "Report file not found: /boundary/MonthlyRevenueReport.jasper"
-                );
-            }
-
-            JasperPrint jasperPrint = JasperFillManager.fillReport(reportStream, parameters, conn);
-            JasperViewer.viewReport(jasperPrint, false);
-            return true;
-
-        } catch (Exception e) {
-            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
-            return false;
-        }
+        return reportService.generate("/boundary/MonthlyRevenueReport.jasper", parameters);
     }
 
-    public boolean generateTreatmentProgressReport(String managerId) {
+    public JasperPrint generateTreatmentProgressReport(String managerId) throws Exception {
         HashMap<String, Object> params = new HashMap<>();
         params.put("DentistID", managerId);
 
-        try (InputStream reportStream =
-                     getClass().getResourceAsStream("/boundary/TreatmentProgressReport.jasper");
-             Connection conn = DatabaseManager.getConnection()) {
-
-            if (reportStream == null) {
-                throw new IllegalStateException(
-                    "Report file not found: /boundary/TreatmentProgressReport.jasper"
-                );
-            }
-
-            JasperPrint print = JasperFillManager.fillReport(reportStream, params, conn);
-            JasperViewer.viewReport(print, false);
-            return true;
-
-        } catch (Exception e) {
-            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
-            return false;
-        }
+        return reportService.generate("/boundary/TreatmentProgressReport.jasper", params);
     }
 
-    public static boolean generateInventoryUsageReport(java.util.Date startDate, java.util.Date endDate) {
+    public JasperPrint generateInventoryUsageReport(java.util.Date startDate,
+                                                     java.util.Date endDate) throws Exception {
         if (startDate == null || endDate == null || endDate.before(startDate)) {
-            return false;
+            throw new IllegalArgumentException("Invalid report date range");
         }
 
         HashMap<String, Object> params = new HashMap<>();
         params.put("StartDate", new Date(startDate.getTime()));
         params.put("EndDate", new Date(endDate.getTime()));
 
-        try (InputStream reportStream =
-                     ManagerController.class.getResourceAsStream("/boundary/InventoryUsageReport.jasper");
-             Connection conn = DatabaseManager.getConnection()) {
-
-            if (reportStream == null) {
-                throw new IllegalStateException(
-                    "Report file not found: /boundary/InventoryUsageReport.jasper"
-                );
-            }
-
-            JasperPrint print = JasperFillManager.fillReport(reportStream, params, conn);
-
-            JasperViewer viewer = new JasperViewer(print, false);
-            viewer.setTitle("Inventory Usage Report");
-            viewer.setVisible(true);
-            return true;
-
-        } catch (Exception e) {
-            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
-            return false;
-        }
+        return reportService.generate("/boundary/InventoryUsageReport.jasper", params);
     }
 
     public boolean importInventoryFromXML(File xmlFile) {
-        Map<String, Supplier> suppliers = InventoryParser.parseSuppliersWithItems(xmlFile);
+        return importInventoryDetailed(xmlFile).success();
+    }
+
+    public InventoryImportResult importInventoryDetailed(File xmlFile) {
+        InventoryParser.ParseResult parsed = InventoryParser.parse(xmlFile);
+        Map<String, Supplier> suppliers = parsed.suppliers();
 
         if (suppliers.isEmpty()) {
-            return false;
+            return new InventoryImportResult(false, 0, parsed.skippedItems(), parsed.errors());
         }
 
         Connection conn = null;
+        int imported = 0;
+        int skipped = parsed.skippedItems();
 
         try {
             conn = DatabaseManager.getConnection();
@@ -633,17 +588,23 @@ public class ManagerController {
                 );
 
                 for (InventoryItem item : supplier.getItems()) {
-                    insertInventoryItem(conn, item);
+                    if (insertInventoryItem(conn, item)) {
+                        imported++;
+                    } else {
+                        skipped++;
+                    }
                 }
             }
 
             conn.commit();
-            return true;
+            return new InventoryImportResult(true, imported, skipped, parsed.errors());
 
         } catch (Exception e) {
             rollbackQuietly(conn);
             utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
-            return false;
+            java.util.List<String> errors = new ArrayList<>(parsed.errors());
+            errors.add("Database import failed; no inventory changes were committed.");
+            return new InventoryImportResult(false, 0, skipped, java.util.List.copyOf(errors));
         } finally {
             closeQuietly(conn);
         }
@@ -677,7 +638,16 @@ public class ManagerController {
         }
     }
 
-    private void insertInventoryItem(Connection conn, InventoryItem item) throws SQLException {
+    private boolean insertInventoryItem(Connection conn, InventoryItem item) throws SQLException {
+        try (PreparedStatement check = conn.prepareStatement(
+                "SELECT 1 FROM TblInventoryItems WHERE SerialNumber = ?")) {
+            check.setString(1, item.getSerialNumber());
+            try (ResultSet result = check.executeQuery()) {
+                if (result.next()) {
+                    return false;
+                }
+            }
+        }
         String sql = """
             INSERT INTO TblInventoryItems
             ([Item Name], Description, Quantity, SupplierInformation,
@@ -699,7 +669,7 @@ public class ManagerController {
 
             stmt.setString(6, item.getSerialNumber());
             stmt.setInt(7, item.getLowStockThreshold());
-            stmt.executeUpdate();
+            return stmt.executeUpdate() == 1;
         }
     }
 

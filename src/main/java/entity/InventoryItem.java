@@ -1,6 +1,7 @@
 package entity;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 public class InventoryItem {
     private int itemId;
@@ -55,5 +56,16 @@ public class InventoryItem {
 
     public int getLowStockThreshold() {
         return lowStockThreshold;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return this == other || other instanceof InventoryItem item
+            && itemId > 0 && itemId == item.itemId;
+    }
+
+    @Override
+    public int hashCode() {
+        return itemId > 0 ? Objects.hash(itemId) : System.identityHashCode(this);
     }
 }

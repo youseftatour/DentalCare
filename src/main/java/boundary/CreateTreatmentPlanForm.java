@@ -3,7 +3,6 @@ package boundary;
 import com.toedter.calendar.JDateChooser;
 import control.DentistController;
 import entity.Patient;
-import utils.DatabaseManager;
 import utils.DesignUtils;
 import utils.UIFactory;
 

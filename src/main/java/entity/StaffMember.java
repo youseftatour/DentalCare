@@ -1,5 +1,7 @@
 package entity;
 
+import java.util.Objects;
+
 public class StaffMember {
     private String id;
     private String firstName;
@@ -44,5 +46,15 @@ public class StaffMember {
     @Override
     public String toString() {
         return getFullName(); 
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return this == other || other instanceof StaffMember staff && Objects.equals(id, staff.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

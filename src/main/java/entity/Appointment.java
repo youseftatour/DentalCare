@@ -2,6 +2,7 @@ package entity;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Objects;
 
 public class Appointment {
     private int appointmentId;
@@ -135,6 +136,17 @@ this.isSterilized = isSterilized;
     @Override
     public String toString() {
         return date.toString() + " " + time.toString() + " - " + treatmentName + " (" + status + ")";
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return this == other || other instanceof Appointment appointment
+            && appointmentId > 0 && appointmentId == appointment.appointmentId;
+    }
+
+    @Override
+    public int hashCode() {
+        return appointmentId > 0 ? Objects.hash(appointmentId) : System.identityHashCode(this);
     }
 
 }

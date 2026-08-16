@@ -1,13 +1,17 @@
 package service;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import repository.AppointmentRepository.AppointmentSlot;
 
 import java.time.LocalTime;
+import java.time.LocalDate;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AppointmentSchedulingServiceTest {
     private final AppointmentSchedulingService service = new AppointmentSchedulingService();
@@ -50,6 +54,14 @@ public class AppointmentSchedulingServiceTest {
 
         assertFalse(service.hasConflict(LocalTime.of(10, 30), 60,
             List.of(thirtyMinuteTreatment), null));
+    }
+
+    @Test
+    public void rejectsPastDateTimeAndAllowsCurrentOrFutureTime() {
+        Clock clock = Clock.fixed(Instant.parse("2026-01-10T10:00:00Z"), ZoneOffset.UTC);
+        assertTrue(service.isInPast(LocalDate.of(2026, 1, 10), LocalTime.of(9, 59), clock));
+        assertFalse(service.isInPast(LocalDate.of(2026, 1, 10), LocalTime.of(10, 0), clock));
+        assertFalse(service.isInPast(LocalDate.of(2026, 1, 11), LocalTime.of(9, 0), clock));
     }
 
     private boolean hasConflict(String start, AppointmentSlot existing, Integer excludedId) {

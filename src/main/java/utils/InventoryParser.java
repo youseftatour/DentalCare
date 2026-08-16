@@ -6,6 +6,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -14,24 +16,53 @@ import java.io.File;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class InventoryParser {
+
+    public record ParseResult(Map<String, Supplier> suppliers, int acceptedItems,
+                              int skippedItems, List<String> errors) {
+        public boolean hasErrors() { return !errors.isEmpty(); }
+    }
 
     private InventoryParser() {
     }
 
     public static Map<String, Supplier> parseSuppliersWithItems(File xmlFile) {
+        return parse(xmlFile).suppliers();
+    }
+
+    public static ParseResult parse(File xmlFile) {
         if (xmlFile == null || !xmlFile.isFile()) {
-            return Collections.emptyMap();
+            return new ParseResult(Collections.emptyMap(), 0, 0,
+                List.of("XML file does not exist."));
         }
 
         Map<String, Supplier> suppliers = new LinkedHashMap<>();
+        List<String> errors = new ArrayList<>();
+        Set<String> serialNumbers = new HashSet<>();
+        int accepted = 0;
+        int skipped = 0;
 
         try {
             DocumentBuilderFactory factory = createSecureFactory();
             DocumentBuilder builder = factory.newDocumentBuilder();
+            builder.setErrorHandler(new DefaultHandler() {
+                @Override
+                public void error(SAXParseException exception) throws SAXParseException {
+                    throw exception;
+                }
+
+                @Override
+                public void fatalError(SAXParseException exception) throws SAXParseException {
+                    throw exception;
+                }
+            });
             Document doc = builder.parse(xmlFile);
             doc.getDocumentElement().normalize();
 
@@ -48,6 +79,7 @@ public final class InventoryParser {
 
                 String name = getTagValue(supplierElement, "SupplierName");
                 if (name.isBlank()) {
+                    errors.add("Supplier " + (i + 1) + " is missing SupplierName.");
                     continue;
                 }
 
@@ -73,20 +105,26 @@ public final class InventoryParser {
                     String serial = getTagValue(itemElement, "SerialNumber");
 
                     if (itemName.isBlank() || serial.isBlank()) {
+                        errors.add("Supplier " + name + " contains an item missing Name or SerialNumber.");
+                        skipped++;
                         continue;
                     }
 
-                    int quantity = parseNonNegativeInt(
-                        getTagValue(itemElement, "Quantity"), 0
-                    );
+                    if (!serialNumbers.add(serial)) {
+                        errors.add("Duplicate SerialNumber in XML: " + serial);
+                        skipped++;
+                        continue;
+                    }
 
-                    int threshold = parseNonNegativeInt(
-                        getTagValue(itemElement, "LowStockAlertThreshold"), 0
-                    );
-
-                    LocalDate expiryDate = parseOptionalDate(
-                        getTagValue(itemElement, "ExpirationDate")
-                    );
+                    Integer quantity = parseNonNegativeInt(getTagValue(itemElement, "Quantity"));
+                    Integer threshold = parseNonNegativeInt(
+                        getTagValue(itemElement, "LowStockAlertThreshold"));
+                    DateValue expiry = parseOptionalDate(getTagValue(itemElement, "ExpirationDate"));
+                    if (quantity == null || threshold == null || !expiry.valid()) {
+                        errors.add("Item " + serial + " has an invalid quantity, threshold, or date.");
+                        skipped++;
+                        continue;
+                    }
 
                     supplier.addItem(new InventoryItem(
                         0,
@@ -94,20 +132,24 @@ public final class InventoryParser {
                         description,
                         quantity,
                         name,
-                        expiryDate,
+                        expiry.value(),
                         serial,
                         threshold
                     ));
+                    accepted++;
                 }
 
                 suppliers.put(name, supplier);
             }
 
-            return suppliers;
+            return new ParseResult(Collections.unmodifiableMap(suppliers), accepted, skipped,
+                List.copyOf(errors));
 
         } catch (Exception e) {
-            utils.AppLogger.error(InventoryParser.class, "Inventory XML parsing failed", e);
-            return Collections.emptyMap();
+            utils.AppLogger.warn(InventoryParser.class,
+                "Inventory XML was rejected: {}", e.getMessage());
+            return new ParseResult(Collections.emptyMap(), 0, 0,
+                List.of("XML could not be parsed safely."));
         }
     }
 
@@ -144,26 +186,28 @@ public final class InventoryParser {
         return node != null ? node.getTextContent().trim() : "";
     }
 
-    private static int parseNonNegativeInt(String value, int defaultValue) {
+    private static Integer parseNonNegativeInt(String value) {
         try {
             int parsed = Integer.parseInt(value);
-            return Math.max(parsed, 0);
+            return parsed >= 0 ? parsed : null;
         } catch (NumberFormatException e) {
-            return defaultValue;
+            return null;
         }
     }
 
-    private static LocalDate parseOptionalDate(String value) {
+    private static DateValue parseOptionalDate(String value) {
         if (value == null || value.isBlank()) {
-            return null;
+            return new DateValue(null, true);
         }
 
         try {
-            return LocalDate.parse(value);
+            return new DateValue(LocalDate.parse(value), true);
         } catch (DateTimeParseException e) {
-            return null;
+            return new DateValue(null, false);
         }
     }
+
+    private record DateValue(LocalDate value, boolean valid) { }
 }
 
 

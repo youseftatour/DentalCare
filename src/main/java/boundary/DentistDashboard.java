@@ -1,18 +1,13 @@
 package boundary;
 
 import control.DentistController;
-import net.sf.jasperreports.engine.JasperCompileManager;
-import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.view.JasperViewer;
-import utils.DatabaseManager;
 import utils.UIFactory;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.InputStream;
-import java.util.HashMap;
+import java.util.concurrent.Callable;
 
 public class DentistDashboard extends JFrame {
     private String dentistId;
@@ -56,22 +51,24 @@ public class DentistDashboard extends JFrame {
     }
 
     private void generateTreatmentProgressReport() {
-        try {
-            HashMap<String, Object> params = new HashMap<>();
-            params.put("DentistID", dentistId);
-            InputStream is = getClass().getResourceAsStream("/boundary/TreatmentProgressReport.jasper");
-            JasperPrint print = JasperFillManager.fillReport(
-                    getClass().getResourceAsStream("TreatmentProgressReport.jasper"),
-                    params,
-                    DatabaseManager.getConnection()
-            );
-            JasperViewer.viewReport(print, false);
-        } catch (Exception e) {
-            utils.AppLogger.error(DentistDashboard.class, "Treatment report generation failed", e);
-            JOptionPane.showMessageDialog(this,
-                "The report could not be generated. Please try again.",
-                "Report Error", JOptionPane.ERROR_MESSAGE);
-        }
+        runReport(() -> controller.generateTreatmentProgressReport(dentistId));
+    }
+
+    private void runReport(Callable<JasperPrint> reportTask) {
+        new SwingWorker<JasperPrint, Void>() {
+            protected JasperPrint doInBackground() throws Exception { return reportTask.call(); }
+            protected void done() {
+                try {
+                    JasperViewer.viewReport(get(), false);
+                } catch (Exception exception) {
+                    utils.AppLogger.error(DentistDashboard.class,
+                        "Treatment report generation failed", exception);
+                    JOptionPane.showMessageDialog(DentistDashboard.this,
+                        "The report could not be generated. Please try again.",
+                        "Report Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 }
 

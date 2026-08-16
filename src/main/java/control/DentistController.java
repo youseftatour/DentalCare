@@ -4,14 +4,13 @@ import entity.Appointment;
 import entity.Patient;
 import repository.AppointmentRepository;
 import repository.PatientRepository;
-import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
-import utils.DatabaseManager;
 import service.DomainValidator;
+import service.ReportService;
+import utils.DatabaseManager;
 
-import java.io.InputStream;
-import java.sql.Connection;
 import java.sql.Date;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,6 +21,7 @@ import java.util.HashMap;
 public class DentistController {
     private final PatientRepository patientRepository = new PatientRepository();
     private final AppointmentRepository appointmentRepository = new AppointmentRepository();
+    private final ReportService reportService = new ReportService();
 
     public ArrayList<Patient> getAllPatients() {
         try {
@@ -173,18 +173,7 @@ public class DentistController {
         HashMap<String, Object> params = new HashMap<>();
         params.put("DentistID", dentistId);
 
-        try (InputStream reportStream =
-                     DentistController.class.getResourceAsStream("/boundary/TreatmentProgressReport.jasper");
-             Connection conn = DatabaseManager.getConnection()) {
-
-            if (reportStream == null) {
-                throw new IllegalStateException(
-                    "Report file not found: /boundary/TreatmentProgressReport.jasper"
-                );
-            }
-
-            return JasperFillManager.fillReport(reportStream, params, conn);
-        }
+        return reportService.generate("/boundary/TreatmentProgressReport.jasper", params);
     }
 }
 

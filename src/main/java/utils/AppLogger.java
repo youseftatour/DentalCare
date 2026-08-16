@@ -13,4 +13,8 @@ public final class AppLogger {
     public static void warn(Class<?> source, String message, Object value) {
         LoggerFactory.getLogger(source).warn(message, value);
     }
+
+    public static void warn(Class<?> source, String message, Throwable error) {
+        LoggerFactory.getLogger(source).warn(message, error);
+    }
 }

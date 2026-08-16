@@ -4,6 +4,8 @@ import com.toedter.calendar.JDateChooser;
 import control.ManagerController;
 import entity.InventoryItem;
 import entity.Supplier;
+import net.sf.jasperreports.view.JasperViewer;
+import net.sf.jasperreports.engine.JasperPrint;
 import utils.DesignUtils;
 import utils.GradientPanel;
 import utils.UIFactory;
@@ -17,6 +19,7 @@ import java.io.File;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.concurrent.Callable;
 
 public class ManagerDashboard extends JFrame {
     private ManagerController managerController;
@@ -56,9 +59,7 @@ public class ManagerDashboard extends JFrame {
 
         revenueReportBtn.addActionListener(e -> showRevenueReportDialog());
         treatmentProgressBtn.addActionListener(e -> {
-            if (!managerController.generateTreatmentProgressReport(managerId)) {
-                showReportError();
-            }
+            runReport(() -> managerController.generateTreatmentProgressReport(managerId));
         });
         inventoryUsageReportBtn.addActionListener(e -> showInventoryUsageDialog());
 
@@ -285,12 +286,18 @@ public class ManagerDashboard extends JFrame {
 
             JButton confirmBtn = new JButton("Import");
             confirmBtn.addActionListener(e -> {
-                if (managerController.importInventoryFromXML(file)) {
+                ManagerController.InventoryImportResult result =
+                    managerController.importInventoryDetailed(file);
+                if (result.success()) {
                     loadInventoryItems();
-                    JOptionPane.showMessageDialog(this, "Data imported successfully.");
+                    JOptionPane.showMessageDialog(this,
+                        "Imported: " + result.importedCount() +
+                        "\nSkipped: " + result.skippedCount());
                     previewDialog.dispose();
                 } else {
-                    JOptionPane.showMessageDialog(this, "Import failed.");
+                    JOptionPane.showMessageDialog(this,
+                        "Import failed. No database changes were committed.\n" +
+                        String.join("\n", result.errors()));
                 }
             });
 
@@ -310,10 +317,8 @@ public class ManagerDashboard extends JFrame {
         panel.add(new JLabel("Year (yyyy):")); panel.add(yearField);
 
         if (JOptionPane.showConfirmDialog(this, panel, "Select Period", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
-            if (!managerController.generateRevenueReport(
-                    monthField.getText().trim(), yearField.getText().trim())) {
-                showReportError();
-            }
+            runReport(() -> managerController.generateRevenueReport(
+                monthField.getText().trim(), yearField.getText().trim()));
         }
     }
 
@@ -344,9 +349,7 @@ public class ManagerDashboard extends JFrame {
                 return;
             }
             dialog.dispose();
-            if (!ManagerController.generateInventoryUsageReport(start, end)) {
-                showReportError();
-            }
+            runReport(() -> managerController.generateInventoryUsageReport(start, end));
         });
 
         dialog.setVisible(true);
@@ -356,5 +359,19 @@ public class ManagerDashboard extends JFrame {
         JOptionPane.showMessageDialog(this,
             "The report could not be generated. Please try again.",
             "Report Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void runReport(Callable<JasperPrint> reportTask) {
+        new SwingWorker<JasperPrint, Void>() {
+            protected JasperPrint doInBackground() throws Exception { return reportTask.call(); }
+            protected void done() {
+                try {
+                    JasperViewer.viewReport(get(), false);
+                } catch (Exception exception) {
+                    utils.AppLogger.error(ManagerDashboard.class, "Report generation failed", exception);
+                    showReportError();
+                }
+            }
+        }.execute();
     }
 }

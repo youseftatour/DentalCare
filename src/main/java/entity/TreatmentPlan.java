@@ -1,6 +1,7 @@
 package entity;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 public class TreatmentPlan {
     private int treatmentPlanId;
@@ -62,5 +63,16 @@ public class TreatmentPlan {
 
     public void setCreatedByDentist(String createdByDentist) {
         this.createdByDentist = createdByDentist;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return this == other || other instanceof TreatmentPlan plan
+            && treatmentPlanId > 0 && treatmentPlanId == plan.treatmentPlanId;
+    }
+
+    @Override
+    public int hashCode() {
+        return treatmentPlanId > 0 ? Objects.hash(treatmentPlanId) : System.identityHashCode(this);
     }
 }
