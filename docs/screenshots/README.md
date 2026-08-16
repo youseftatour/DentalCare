@@ -1,11 +1,14 @@
 # Screenshot checklist
 
-Add current screenshots with these filenames before publishing the portfolio:
+Included screenshots:
 
-- `login.png`
-- `patient-dashboard.png`
+- `login-role-selection.png`
+- `manager-reports.png`
+- `manager-inventory.png`
+- `patient-profile.png`
+- `patient-treatment-plan.png`
+- `patient-appointments.png`
 - `secretary-dashboard.png`
 - `dentist-dashboard.png`
-- `manager-dashboard.png`
 
 Use test data only; do not include real patient information or passwords.

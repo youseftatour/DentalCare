@@ -79,9 +79,42 @@ src/test/java             Unit tests
 
 ## Screenshots
 
-Screenshot filenames and privacy guidance are listed in
-[`docs/screenshots/README.md`](docs/screenshots/README.md). Add current images
-before publishing the repository.
+### Role selection
+
+![DentalCare role selection](docs/screenshots/login-role-selection.png)
+
+### Manager reports
+
+![Manager reports dashboard](docs/screenshots/manager-reports.png)
+
+### Manager inventory
+
+![Manager inventory dashboard](docs/screenshots/manager-inventory.png)
+
+### Patient dashboard
+
+#### Profile
+
+![Patient profile dashboard](docs/screenshots/patient-profile.png)
+
+#### Treatment plan
+
+![Patient treatment-plan dashboard](docs/screenshots/patient-treatment-plan.png)
+
+#### Appointments
+
+![Patient appointments dashboard](docs/screenshots/patient-appointments.png)
+
+### Secretary dashboard
+
+![Secretary dashboard](docs/screenshots/secretary-dashboard.png)
+
+### Dentist dashboard
+
+![Dentist dashboard](docs/screenshots/dentist-dashboard.png)
+
+Screenshot assets and privacy guidance are documented in the
+[`docs/screenshots` directory](docs/screenshots/README.md).
 
 ## Reports
 
