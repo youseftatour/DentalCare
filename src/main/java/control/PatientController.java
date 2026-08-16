@@ -2,6 +2,7 @@ package control;
 
 import entity.Patient;
 import entity.Treatment;
+import repository.AppointmentRepository;
 import repository.PatientRepository;
 
 import java.sql.Date;
@@ -16,9 +17,11 @@ import java.util.ArrayList;
 
 public class PatientController {
     private final PatientRepository patientRepository;
+    private final AppointmentRepository appointmentRepository;
 
     public PatientController() {
         patientRepository = new PatientRepository();
+        appointmentRepository = new AppointmentRepository();
     }
 
     public Patient getPatientByID(int id) {
@@ -53,7 +56,7 @@ public class PatientController {
             return false;
         }
         try {
-            return patientRepository.updateAppointmentStatus(appointmentId, newStatus);
+            return appointmentRepository.updateStatus(appointmentId, newStatus);
         } catch (SQLException exception) {
             exception.printStackTrace();
             return false;
@@ -67,7 +70,7 @@ public class PatientController {
             if (LocalDateTime.of(date, time).isBefore(LocalDateTime.now())) {
                 return false;
             }
-            return patientRepository.rescheduleAppointment(appointmentId, date, time);
+            return appointmentRepository.reschedule(appointmentId, date, time);
         } catch (DateTimeParseException | SQLException exception) {
             exception.printStackTrace();
             return false;
@@ -100,7 +103,7 @@ public class PatientController {
             if (LocalDateTime.of(date.toLocalDate(), appointmentTime).isBefore(LocalDateTime.now())) {
                 return false;
             }
-            return patientRepository.insertAppointment(patientId, date, appointmentTime, reason, treatmentName);
+            return appointmentRepository.insert(patientId, date, appointmentTime, reason, treatmentName);
         } catch (DateTimeParseException | SQLException exception) {
             exception.printStackTrace();
             return false;

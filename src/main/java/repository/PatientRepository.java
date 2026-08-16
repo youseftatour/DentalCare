@@ -47,6 +47,31 @@ public class PatientRepository {
         }
     }
 
+    public ArrayList<Patient> findAll() throws SQLException {
+        String sql = """
+            SELECT P.PersonId, P.FirstName, P.LastName, P.PhoneNumber, P.Email, P.DateOfBirth,
+                   Pt.InsuranceProviderName, Pt.PolicyNumber
+            FROM TblPersons P
+            INNER JOIN TblPatients Pt ON Pt.PatientId = P.PersonId
+            ORDER BY P.LastName, P.FirstName
+            """;
+        ArrayList<Patient> patients = new ArrayList<>();
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+            while (resultSet.next()) {
+                Date dateOfBirth = resultSet.getDate("DateOfBirth");
+                int age = dateOfBirth == null ? 0
+                    : Period.between(dateOfBirth.toLocalDate(), LocalDate.now()).getYears();
+                patients.add(new Patient(resultSet.getInt("PersonId"),
+                    resultSet.getString("FirstName") + " " + resultSet.getString("LastName"),
+                    resultSet.getString("PhoneNumber"), resultSet.getString("Email"), age,
+                    resultSet.getString("InsuranceProviderName"), resultSet.getString("PolicyNumber")));
+            }
+        }
+        return patients;
+    }
+
     public ArrayList<Treatment> findActiveTreatments(int patientId) throws SQLException {
         String sql = """
             SELECT A.TreatmentName, A.Cost, A.Status
@@ -112,46 +137,4 @@ public class PatientRepository {
         return treatments;
     }
 
-    public boolean updateAppointmentStatus(int appointmentId, String status) throws SQLException {
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(
-                 "UPDATE TblAppointments SET Status = ? WHERE AppointmentID = ?")) {
-            statement.setString(1, status);
-            statement.setInt(2, appointmentId);
-            return statement.executeUpdate() > 0;
-        }
-    }
-
-    public boolean rescheduleAppointment(int appointmentId, LocalDate date, LocalTime time) throws SQLException {
-        String sql = """
-            UPDATE TblAppointments
-            SET AppointmentDate = ?, AppointmentTime = ?, Status = 'Scheduled'
-            WHERE AppointmentID = ?
-            """;
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setDate(1, Date.valueOf(date));
-            statement.setTime(2, Time.valueOf(time));
-            statement.setInt(3, appointmentId);
-            return statement.executeUpdate() > 0;
-        }
-    }
-
-    public boolean insertAppointment(int patientId, Date date, LocalTime time,
-                                     String reason, String treatmentName) throws SQLException {
-        String sql = """
-            INSERT INTO TblAppointments
-                (PatientID, AppointmentDate, AppointmentTime, ReasonForVisit, TreatmentName, Status)
-            VALUES (?, ?, ?, ?, ?, 'Scheduled')
-            """;
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setInt(1, patientId);
-            statement.setDate(2, date);
-            statement.setTime(3, Time.valueOf(time));
-            statement.setString(4, reason);
-            statement.setString(5, treatmentName);
-            return statement.executeUpdate() > 0;
-        }
-    }
 }

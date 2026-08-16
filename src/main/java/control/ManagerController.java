@@ -6,6 +6,7 @@ import entity.Patient;
 import entity.Supplier;
 import entity.TreatmentPlan;
 import repository.InventoryRepository;
+import repository.PatientRepository;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.view.JasperViewer;
@@ -29,6 +30,7 @@ import java.util.Map;
 
 public class ManagerController {
     private final InventoryRepository inventoryRepository = new InventoryRepository();
+    private final PatientRepository patientRepository = new PatientRepository();
 
     public boolean personIdExists(String id) {
         String sql = "SELECT 1 FROM TblPersons WHERE PersonId = ?";
@@ -472,42 +474,12 @@ public class ManagerController {
     }
 
     public ArrayList<Patient> getAllPatients() {
-        ArrayList<Patient> list = new ArrayList<>();
-
-        String sql = """
-            SELECT p.PersonId, p.FirstName, p.LastName, p.PhoneNumber, p.Email,
-                   p.DateOfBirth, pat.InsuranceProviderName, pat.PolicyNumber
-            FROM TblPersons p
-            INNER JOIN TblPatients pat ON p.PersonId = pat.PatientId
-            ORDER BY p.LastName, p.FirstName
-            """;
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                Date dob = rs.getDate("DateOfBirth");
-                int age = dob != null
-                        ? Period.between(dob.toLocalDate(), LocalDate.now()).getYears()
-                        : 0;
-
-                list.add(new Patient(
-                    rs.getInt("PersonId"),
-                    rs.getString("FirstName") + " " + rs.getString("LastName"),
-                    rs.getString("PhoneNumber"),
-                    rs.getString("Email"),
-                    age,
-                    rs.getString("InsuranceProviderName"),
-                    rs.getString("PolicyNumber")
-                ));
-            }
-
+        try {
+            return patientRepository.findAll();
         } catch (SQLException e) {
             e.printStackTrace();
+            return new ArrayList<>();
         }
-
-        return list;
     }
 
     public boolean addTreatmentPlan(String patientId, LocalDate startDate,

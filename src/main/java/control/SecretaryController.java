@@ -5,6 +5,8 @@ import entity.InventoryItem;
 import entity.Patient;
 import entity.StaffMember;
 import repository.InventoryRepository;
+import repository.AppointmentRepository;
+import repository.PatientRepository;
 import utils.DatabaseManager;
 
 import java.sql.Connection;
@@ -30,6 +32,8 @@ public class SecretaryController {
     private static final LocalTime CLOSING_TIME = LocalTime.of(17, 0);
     private static final int SLOT_STEP_MINUTES = 30;
     private final InventoryRepository inventoryRepository = new InventoryRepository();
+    private final AppointmentRepository appointmentRepository = new AppointmentRepository();
+    private final PatientRepository patientRepository = new PatientRepository();
 
     public boolean addInventoryItem(InventoryItem item) {
         if (item == null || item.getQuantity() < 0 || item.getLowStockThreshold() < 0) {
@@ -155,15 +159,8 @@ public class SecretaryController {
     }
 
     public void updateStatus(int appointmentId, String newStatus) {
-        String sql = "UPDATE TblAppointments SET Status = ? WHERE AppointmentID = ?";
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, newStatus);
-            stmt.setInt(2, appointmentId);
-            stmt.executeUpdate();
-
+        try {
+            appointmentRepository.updateStatus(appointmentId, newStatus);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -442,58 +439,18 @@ public class SecretaryController {
     }
 
     public ArrayList<Patient> getAllPatients() {
-        ArrayList<Patient> list = new ArrayList<>();
-
-        String sql = """
-            SELECT P.PersonId, P.FirstName, P.LastName, P.PhoneNumber, P.Email, P.DateOfBirth,
-                   Pt.InsuranceProviderName, Pt.PolicyNumber
-            FROM TblPersons P
-            INNER JOIN TblPatients Pt ON Pt.PatientId = P.PersonId
-            ORDER BY P.LastName, P.FirstName
-            """;
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                int id = rs.getInt("PersonId");
-                String name = rs.getString("FirstName") + " " + rs.getString("LastName");
-                Date dob = rs.getDate("DateOfBirth");
-                int age = dob != null
-                        ? Period.between(dob.toLocalDate(), LocalDate.now()).getYears()
-                        : 0;
-
-                list.add(new Patient(
-                    id,
-                    name,
-                    rs.getString("PhoneNumber"),
-                    rs.getString("Email"),
-                    age,
-                    rs.getString("InsuranceProviderName"),
-                    rs.getString("PolicyNumber")
-                ));
-            }
-
+        try {
+            return patientRepository.findAll();
         } catch (SQLException e) {
             e.printStackTrace();
+            return new ArrayList<>();
         }
-
-        return list;
     }
 
     public ArrayList<String> getAllTreatmentNames() {
         ArrayList<String> list = new ArrayList<>();
-        String sql = "SELECT TreatmentName FROM TblTreatments ORDER BY TreatmentName";
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                list.add(rs.getString("TreatmentName"));
-            }
-
+        try {
+            patientRepository.findAllTreatments().forEach(treatment -> list.add(treatment.getName()));
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -732,14 +689,8 @@ public class SecretaryController {
     }
 
     public void cancelAppointment(int appointmentId) {
-        String sql = "UPDATE TblAppointments SET Status = 'Cancelled' WHERE AppointmentID = ?";
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, appointmentId);
-            stmt.executeUpdate();
-
+        try {
+            appointmentRepository.updateStatus(appointmentId, "Cancelled");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -762,20 +713,8 @@ public class SecretaryController {
             return false;
         }
 
-        String sql = """
-            UPDATE TblAppointments
-            SET AppointmentDate = ?, AppointmentTime = ?, Status = 'Rescheduled'
-            WHERE AppointmentID = ?
-            """;
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setDate(1, Date.valueOf(newDate));
-            stmt.setTime(2, Time.valueOf(newTime));
-            stmt.setInt(3, appointmentId);
-            return stmt.executeUpdate() > 0;
-
+        try {
+            return appointmentRepository.reschedule(appointmentId, newDate, newTime, "Rescheduled");
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

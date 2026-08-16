@@ -2,6 +2,8 @@ package control;
 
 import entity.Appointment;
 import entity.Patient;
+import repository.AppointmentRepository;
+import repository.PatientRepository;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import utils.DatabaseManager;
@@ -11,38 +13,22 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class DentistController {
+    private final PatientRepository patientRepository = new PatientRepository();
+    private final AppointmentRepository appointmentRepository = new AppointmentRepository();
 
     public ArrayList<Patient> getAllPatients() {
-        ArrayList<Patient> patients = new ArrayList<>();
-
-        String sql = """
-            SELECT Pa.PatientID, Per.FirstName, Per.LastName
-            FROM TblPatients Pa
-            INNER JOIN TblPersons Per ON Pa.PatientID = Per.PersonID
-            ORDER BY Per.LastName, Per.FirstName
-            """;
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                patients.add(new Patient(
-                    rs.getInt("PatientID"),
-                    rs.getString("FirstName") + " " + rs.getString("LastName")
-                ));
-            }
-
-        } catch (Exception e) {
+        try {
+            return patientRepository.findAll();
+        } catch (SQLException e) {
             e.printStackTrace();
+            return new ArrayList<>();
         }
-
-        return patients;
     }
 
     public boolean createTreatmentPlan(int patientId, Date startDate, Date endDate, String dentistId) {
@@ -168,15 +154,9 @@ public class DentistController {
     }
 
     public boolean completeAppointment(int appointmentId) {
-        String sql = "UPDATE TblAppointments SET Status = 'Completed' WHERE AppointmentID = ?";
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, appointmentId);
-            return stmt.executeUpdate() > 0;
-
-        } catch (Exception e) {
+        try {
+            return appointmentRepository.updateStatus(appointmentId, "Completed");
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
