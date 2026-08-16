@@ -46,7 +46,7 @@ public class SecretaryController {
         try {
             return inventoryRepository.insert(item);
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
             return false;
         }
     }
@@ -55,7 +55,7 @@ public class SecretaryController {
         try {
             return inventoryRepository.deleteById(itemId);
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
             return false;
         }
     }
@@ -108,7 +108,7 @@ public class SecretaryController {
             }
         } catch (SQLException e) {
             rollbackQuietly(conn);
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
             return false;
         } finally {
             closeQuietly(conn);
@@ -137,7 +137,7 @@ public class SecretaryController {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
             return false;
         }
     }
@@ -155,7 +155,7 @@ public class SecretaryController {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
 
         return providers;
@@ -165,7 +165,7 @@ public class SecretaryController {
         try {
             appointmentRepository.updateStatus(appointmentId, newStatus);
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
     }
 
@@ -180,7 +180,7 @@ public class SecretaryController {
             stmt.executeUpdate();
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
     }
 
@@ -214,7 +214,7 @@ public class SecretaryController {
             return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
             return false;
         }
     }
@@ -279,7 +279,7 @@ public class SecretaryController {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
 
         return list;
@@ -337,7 +337,7 @@ public class SecretaryController {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
 
         return rows;
@@ -349,19 +349,19 @@ public class SecretaryController {
         try {
             quantity = Integer.parseInt(newQuantity);
         } catch (NumberFormatException e) {
-            System.err.println("Invalid inventory quantity: " + newQuantity);
+            utils.AppLogger.warn(SecretaryController.class, "Invalid inventory quantity: {}", newQuantity);
             return;
         }
 
         if (quantity < 0) {
-            System.err.println("Inventory quantity cannot be negative.");
+            utils.AppLogger.warn(SecretaryController.class, "Inventory quantity cannot be negative: {}", quantity);
             return;
         }
 
         try {
             inventoryRepository.updateQuantity(itemId, quantity);
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
     }
 
@@ -376,7 +376,7 @@ public class SecretaryController {
         try {
             inventoryRepository.updateLowStockThreshold(itemId, threshold);
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
     }
 
@@ -384,7 +384,7 @@ public class SecretaryController {
         try {
             return inventoryRepository.findAll();
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
             return new ArrayList<>();
         }
     }
@@ -435,7 +435,7 @@ public class SecretaryController {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
 
         return list;
@@ -445,7 +445,7 @@ public class SecretaryController {
         try {
             return patientRepository.findAll();
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
             return new ArrayList<>();
         }
     }
@@ -455,7 +455,7 @@ public class SecretaryController {
         try {
             patientRepository.findAllTreatments().forEach(treatment -> list.add(treatment.getName()));
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
 
         return list;
@@ -465,7 +465,7 @@ public class SecretaryController {
         try {
             return patientRepository.findTreatmentDuration(treatmentName);
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
             return 0;
         }
     }
@@ -494,7 +494,7 @@ public class SecretaryController {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
 
         return allStaff;
@@ -545,7 +545,7 @@ public class SecretaryController {
             return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
             return false;
         }
     }
@@ -619,7 +619,7 @@ public class SecretaryController {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
 
         return result;
@@ -697,7 +697,7 @@ public class SecretaryController {
             stmt.executeUpdate();
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
     }
 
@@ -705,7 +705,7 @@ public class SecretaryController {
         try {
             appointmentRepository.updateStatus(appointmentId, "Cancelled");
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
     }
 
@@ -729,7 +729,7 @@ public class SecretaryController {
         try {
             return appointmentRepository.reschedule(appointmentId, newDate, newTime, "Rescheduled");
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
             return false;
         }
     }
@@ -738,7 +738,7 @@ public class SecretaryController {
         try {
             return appointmentRepository.findDurationMinutes(appointmentId);
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
             return 0;
         }
     }
@@ -781,7 +781,7 @@ public class SecretaryController {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
 
         return null;
@@ -793,7 +793,7 @@ public class SecretaryController {
             return !schedulingService.hasConflict(candidateStart, durationMinutes,
                 appointmentRepository.findStaffAppointments(staffId, date), excludedAppointmentId);
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
             return false;
         }
     }
@@ -825,7 +825,7 @@ public class SecretaryController {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(SecretaryController.class, "Secretary database operation failed", e);
         }
 
         return null;
@@ -868,3 +868,6 @@ public class SecretaryController {
         }
     }
 }
+
+
+

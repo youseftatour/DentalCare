@@ -31,7 +31,7 @@ public class PatientController {
         try {
             return patientRepository.findById(id);
         } catch (SQLException exception) {
-            exception.printStackTrace();
+            utils.AppLogger.error(PatientController.class, "Patient database operation failed", exception);
             return null;
         }
     }
@@ -40,7 +40,7 @@ public class PatientController {
         try {
             return patientRepository.findActiveTreatments(patientId);
         } catch (SQLException exception) {
-            exception.printStackTrace();
+            utils.AppLogger.error(PatientController.class, "Patient database operation failed", exception);
             return new ArrayList<>();
         }
     }
@@ -49,7 +49,7 @@ public class PatientController {
         try {
             return patientRepository.findUpcomingAppointments(patientId, LocalDate.now());
         } catch (SQLException exception) {
-            exception.printStackTrace();
+            utils.AppLogger.error(PatientController.class, "Patient database operation failed", exception);
             return new ArrayList<>();
         }
     }
@@ -61,7 +61,7 @@ public class PatientController {
         try {
             return appointmentRepository.updateStatus(appointmentId, newStatus);
         } catch (SQLException exception) {
-            exception.printStackTrace();
+            utils.AppLogger.error(PatientController.class, "Patient database operation failed", exception);
             return false;
         }
     }
@@ -83,7 +83,7 @@ public class PatientController {
             }
             return appointmentRepository.reschedule(appointmentId, date, time);
         } catch (DateTimeParseException | SQLException exception) {
-            exception.printStackTrace();
+            utils.AppLogger.error(PatientController.class, "Patient database operation failed", exception);
             return false;
         }
     }
@@ -99,7 +99,7 @@ public class PatientController {
         try {
             return patientRepository.findAllTreatments();
         } catch (SQLException exception) {
-            exception.printStackTrace();
+            utils.AppLogger.error(PatientController.class, "Patient database operation failed", exception);
             return new ArrayList<>();
         }
     }
@@ -120,7 +120,7 @@ public class PatientController {
             }
             return appointmentRepository.insert(patientId, date, appointmentTime, reason, treatmentName);
         } catch (DateTimeParseException | SQLException exception) {
-            exception.printStackTrace();
+            utils.AppLogger.error(PatientController.class, "Patient database operation failed", exception);
             return false;
         }
     }
@@ -133,3 +133,5 @@ public class PatientController {
         return trimmed.length() == 5 ? LocalTime.parse(trimmed) : Time.valueOf(trimmed).toLocalTime();
     }
 }
+
+

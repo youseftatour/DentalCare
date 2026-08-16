@@ -60,7 +60,6 @@ public class DentistDashboard extends JFrame {
             HashMap<String, Object> params = new HashMap<>();
             params.put("DentistID", dentistId);
             InputStream is = getClass().getResourceAsStream("/boundary/TreatmentProgressReport.jasper");
-            System.out.println("is null? " + (is == null));
             JasperPrint print = JasperFillManager.fillReport(
                     getClass().getResourceAsStream("TreatmentProgressReport.jasper"),
                     params,
@@ -68,8 +67,13 @@ public class DentistDashboard extends JFrame {
             );
             JasperViewer.viewReport(print, false);
         } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Failed to generate report: " + e.getMessage());
+            utils.AppLogger.error(DentistDashboard.class, "Treatment report generation failed", e);
+            JOptionPane.showMessageDialog(this,
+                "The report could not be generated. Please try again.",
+                "Report Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
+
+
+

@@ -29,7 +29,7 @@ public class AuthController {
             Account account = authRepository.findPatientByIdentifier(identifier);
             return authenticatedUser(account, password);
         } catch (SQLException exception) {
-            exception.printStackTrace();
+            utils.AppLogger.error(AuthController.class, "Authentication query failed", exception);
             return null;
         }
     }
@@ -39,7 +39,7 @@ public class AuthController {
             Account account = authRepository.findStaffById(staffId);
             return authenticatedUser(account, password);
         } catch (SQLException | NumberFormatException exception) {
-            exception.printStackTrace();
+            utils.AppLogger.error(AuthController.class, "Authentication query failed", exception);
             return null;
         }
     }
@@ -49,3 +49,5 @@ public class AuthController {
             ? account.user() : null;
     }
 }
+
+

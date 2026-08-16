@@ -55,7 +55,11 @@ public class ManagerDashboard extends JFrame {
         gbc.gridy = 2; reportsTab.add(treatmentProgressBtn, gbc);
 
         revenueReportBtn.addActionListener(e -> showRevenueReportDialog());
-        treatmentProgressBtn.addActionListener(e -> managerController.generateTreatmentProgressReport(managerId));
+        treatmentProgressBtn.addActionListener(e -> {
+            if (!managerController.generateTreatmentProgressReport(managerId)) {
+                showReportError();
+            }
+        });
         inventoryUsageReportBtn.addActionListener(e -> showInventoryUsageDialog());
 
         tabbedPane.addTab("Reports", reportsTab);
@@ -306,7 +310,10 @@ public class ManagerDashboard extends JFrame {
         panel.add(new JLabel("Year (yyyy):")); panel.add(yearField);
 
         if (JOptionPane.showConfirmDialog(this, panel, "Select Period", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
-            managerController.generateRevenueReport(monthField.getText().trim(), yearField.getText().trim());
+            if (!managerController.generateRevenueReport(
+                    monthField.getText().trim(), yearField.getText().trim())) {
+                showReportError();
+            }
         }
     }
 
@@ -337,9 +344,17 @@ public class ManagerDashboard extends JFrame {
                 return;
             }
             dialog.dispose();
-            managerController.generateInventoryUsageReport(start, end);
+            if (!ManagerController.generateInventoryUsageReport(start, end)) {
+                showReportError();
+            }
         });
 
         dialog.setVisible(true);
+    }
+
+    private void showReportError() {
+        JOptionPane.showMessageDialog(this,
+            "The report could not be generated. Please try again.",
+            "Report Error", JOptionPane.ERROR_MESSAGE);
     }
 }

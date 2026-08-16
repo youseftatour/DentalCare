@@ -26,7 +26,7 @@ public class DentistController {
         try {
             return patientRepository.findAll();
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(DentistController.class, "Dentist database operation failed", e);
             return new ArrayList<>();
         }
     }
@@ -57,7 +57,7 @@ public class DentistController {
             return stmt.executeUpdate() > 0;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            utils.AppLogger.error(DentistController.class, "Dentist database operation failed", e);
             return false;
         }
     }
@@ -97,7 +97,7 @@ public class DentistController {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            utils.AppLogger.error(DentistController.class, "Dentist database operation failed", e);
         }
 
         return plans;
@@ -147,7 +147,7 @@ public class DentistController {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            utils.AppLogger.error(DentistController.class, "Dentist database operation failed", e);
         }
 
         return list;
@@ -157,7 +157,7 @@ public class DentistController {
         try {
             return appointmentRepository.updateStatus(appointmentId, "Completed");
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(DentistController.class, "Dentist database operation failed", e);
             return false;
         }
     }
@@ -184,3 +184,5 @@ public class DentistController {
         }
     }
 }
+
+

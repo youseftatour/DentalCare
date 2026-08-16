@@ -106,7 +106,7 @@ public final class InventoryParser {
             return suppliers;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            utils.AppLogger.error(InventoryParser.class, "Inventory XML parsing failed", e);
             return Collections.emptyMap();
         }
     }
@@ -165,3 +165,5 @@ public final class InventoryParser {
         }
     }
 }
+
+

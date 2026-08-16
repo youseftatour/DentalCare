@@ -14,7 +14,6 @@ import utils.DatabaseManager;
 import utils.InventoryParser;
 import utils.TransactionUtils;
 
-import javax.swing.JOptionPane;
 import java.io.File;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -46,7 +45,7 @@ public class ManagerController {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
             return false;
         }
     }
@@ -74,7 +73,7 @@ public class ManagerController {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
         }
 
         return plans;
@@ -110,7 +109,7 @@ public class ManagerController {
             return stmt.executeUpdate() > 0;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
             return false;
         }
     }
@@ -130,7 +129,7 @@ public class ManagerController {
             return stmt.executeUpdate() > 0;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
             return false;
         }
     }
@@ -145,7 +144,7 @@ public class ManagerController {
             return stmt.executeUpdate() > 0;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
             return false;
         }
     }
@@ -180,7 +179,7 @@ public class ManagerController {
 
         } catch (Exception e) {
             rollbackQuietly(conn);
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
             return false;
         } finally {
             closeQuietly(conn);
@@ -234,7 +233,7 @@ public class ManagerController {
 
         } catch (Exception e) {
             rollbackQuietly(conn);
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
             return false;
         } finally {
             closeQuietly(conn);
@@ -286,7 +285,7 @@ public class ManagerController {
 
         } catch (Exception e) {
             rollbackQuietly(conn);
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
             return false;
         } finally {
             closeQuietly(conn);
@@ -325,7 +324,7 @@ public class ManagerController {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
         }
 
         return staffList;
@@ -337,19 +336,19 @@ public class ManagerController {
         try {
             quantity = Integer.parseInt(newQty);
         } catch (NumberFormatException e) {
-            System.err.println("Invalid inventory quantity: " + newQty);
+            utils.AppLogger.warn(ManagerController.class, "Invalid inventory quantity: {}", newQty);
             return;
         }
 
         if (quantity < 0) {
-            System.err.println("Inventory quantity cannot be negative.");
+            utils.AppLogger.warn(ManagerController.class, "Inventory quantity cannot be negative: {}", quantity);
             return;
         }
 
         try {
             inventoryRepository.updateQuantity(itemId, quantity);
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
         }
     }
 
@@ -361,7 +360,7 @@ public class ManagerController {
         try {
             inventoryRepository.updateLowStockThreshold(itemId, newThreshold);
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
         }
     }
 
@@ -369,7 +368,7 @@ public class ManagerController {
         try {
             return inventoryRepository.findAll();
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
             return new ArrayList<>();
         }
     }
@@ -382,7 +381,7 @@ public class ManagerController {
         try {
             return inventoryRepository.insert(item);
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
             return false;
         }
     }
@@ -391,7 +390,7 @@ public class ManagerController {
         try {
             return inventoryRepository.deleteById(itemId);
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
             return false;
         }
     }
@@ -418,7 +417,7 @@ public class ManagerController {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
         }
 
         return 0;
@@ -468,7 +467,7 @@ public class ManagerController {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
         }
 
         return list;
@@ -478,7 +477,7 @@ public class ManagerController {
         try {
             return patientRepository.findAll();
         } catch (SQLException e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
             return new ArrayList<>();
         }
     }
@@ -512,12 +511,12 @@ public class ManagerController {
             return stmt.executeUpdate() > 0;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
             return false;
         }
     }
 
-    public void generateRevenueReport(String month, String year) {
+    public boolean generateRevenueReport(String month, String year) {
         HashMap<String, Object> parameters = new HashMap<>();
         parameters.put("reportMonth", month);
         parameters.put("reportYear", year);
@@ -534,19 +533,15 @@ public class ManagerController {
 
             JasperPrint jasperPrint = JasperFillManager.fillReport(reportStream, parameters, conn);
             JasperViewer.viewReport(jasperPrint, false);
+            return true;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(
-                null,
-                "Failed to generate report: " + e.getMessage(),
-                "Error",
-                JOptionPane.ERROR_MESSAGE
-            );
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
+            return false;
         }
     }
 
-    public void generateTreatmentProgressReport(String managerId) {
+    public boolean generateTreatmentProgressReport(String managerId) {
         HashMap<String, Object> params = new HashMap<>();
         params.put("DentistID", managerId);
 
@@ -562,21 +557,17 @@ public class ManagerController {
 
             JasperPrint print = JasperFillManager.fillReport(reportStream, params, conn);
             JasperViewer.viewReport(print, false);
+            return true;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(
-                null,
-                "Failed to generate report: " + e.getMessage(),
-                "Error",
-                JOptionPane.ERROR_MESSAGE
-            );
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
+            return false;
         }
     }
 
-    public static void generateInventoryUsageReport(java.util.Date startDate, java.util.Date endDate) {
+    public static boolean generateInventoryUsageReport(java.util.Date startDate, java.util.Date endDate) {
         if (startDate == null || endDate == null || endDate.before(startDate)) {
-            return;
+            return false;
         }
 
         HashMap<String, Object> params = new HashMap<>();
@@ -598,15 +589,11 @@ public class ManagerController {
             JasperViewer viewer = new JasperViewer(print, false);
             viewer.setTitle("Inventory Usage Report");
             viewer.setVisible(true);
+            return true;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(
-                null,
-                "Error generating report: " + e.getMessage(),
-                "Error",
-                JOptionPane.ERROR_MESSAGE
-            );
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
+            return false;
         }
     }
 
@@ -642,7 +629,7 @@ public class ManagerController {
 
         } catch (Exception e) {
             rollbackQuietly(conn);
-            e.printStackTrace();
+            utils.AppLogger.error(ManagerController.class, "Manager database or report operation failed", e);
             return false;
         } finally {
             closeQuietly(conn);
@@ -715,3 +702,6 @@ public class ManagerController {
         TransactionUtils.restoreAutoCommitAndClose(conn);
     }
 }
+
+
+

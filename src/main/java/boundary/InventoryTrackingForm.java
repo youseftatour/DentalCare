@@ -79,7 +79,7 @@ public class InventoryTrackingForm extends JFrame {
                         secretaryController.updateInventoryThreshold(itemId, newThreshold);
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    utils.AppLogger.error(InventoryTrackingForm.class, "Inventory UI operation failed", ex);
                     JOptionPane.showMessageDialog(this, "Failed to update database.");
                 }
 
@@ -212,7 +212,7 @@ public class InventoryTrackingForm extends JFrame {
                 });
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            utils.AppLogger.error(InventoryTrackingForm.class, "Inventory UI operation failed", e);
         }
     }
     private void deleteSelectedItem() {
@@ -240,3 +240,5 @@ public class InventoryTrackingForm extends JFrame {
     }
 
 }
+
+
