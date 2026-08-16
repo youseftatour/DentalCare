@@ -11,6 +11,7 @@ import java.awt.*;
 public class StaffLoginFrame extends JFrame {
 
     private JTextField idField;
+    private JPasswordField passwordField;
 
     public StaffLoginFrame() {
         setTitle("Staff Login");
@@ -28,6 +29,7 @@ public class StaffLoginFrame extends JFrame {
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         idField = UIFactory.createTextField();
+        passwordField = new JPasswordField();
 
         JButton loginBtn = UIFactory.createButton("Login");
         loginBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -36,6 +38,9 @@ public class StaffLoginFrame extends JFrame {
         panel.add(title);
         panel.add(Box.createVerticalStrut(20));
         panel.add(idField);
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(UIFactory.createLabel("Password:"));
+        panel.add(passwordField);
         panel.add(Box.createVerticalStrut(20));
         panel.add(loginBtn);
     }
@@ -43,7 +48,13 @@ public class StaffLoginFrame extends JFrame {
     private void attemptLogin() {
         String staffId = idField.getText().trim();
 
-        User user = AuthController.getInstance().authenticateStaff(staffId);
+        char[] password = passwordField.getPassword();
+        User user;
+        try {
+            user = AuthController.getInstance().authenticateStaff(staffId, password);
+        } finally {
+            java.util.Arrays.fill(password, '\0');
+        }
         if (user != null) {
             dispose();
             switch (user.getRole()) {
@@ -53,7 +64,7 @@ public class StaffLoginFrame extends JFrame {
                 default -> JOptionPane.showMessageDialog(this, "Unknown role.");
             }
         } else {
-            JOptionPane.showMessageDialog(this, "Invalid staff ID.", "Login Failed", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Invalid login credentials.", "Login Failed", JOptionPane.ERROR_MESSAGE);
         }
     }
 }

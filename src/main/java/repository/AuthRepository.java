@@ -9,9 +9,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class AuthRepository {
-    public User findPatientByIdentifier(String identifier) throws SQLException {
+    public record Account(User user, String passwordHash) { }
+
+    public Account findPatientByIdentifier(String identifier) throws SQLException {
         String sql = """
-            SELECT P.PersonId, P.FirstName, P.LastName
+            SELECT P.PersonId, P.FirstName, P.LastName, P.PasswordHash
             FROM TblPatients PT
             JOIN TblPersons P ON PT.PatientId = P.PersonId
             WHERE PT.Identifier = ?
@@ -26,14 +28,15 @@ public class AuthRepository {
                 }
                 int id = resultSet.getInt("PersonId");
                 String name = resultSet.getString("FirstName") + " " + resultSet.getString("LastName");
-                return new User("Patient", name, id);
+                return new Account(new User("Patient", name, id),
+                    resultSet.getString("PasswordHash"));
             }
         }
     }
 
-    public User findStaffById(String staffId) throws SQLException {
+    public Account findStaffById(String staffId) throws SQLException {
         String sql = """
-            SELECT S.Role, P.FirstName, P.LastName
+            SELECT S.Role, P.FirstName, P.LastName, P.PasswordHash
             FROM TblStaff S
             JOIN TblPersons P ON S.StaffId = P.PersonId
             WHERE S.StaffId = ?
@@ -48,8 +51,19 @@ public class AuthRepository {
                 }
                 String role = resultSet.getString("Role");
                 String name = resultSet.getString("FirstName") + " " + resultSet.getString("LastName");
-                return new User(role, name, Integer.parseInt(staffId));
+                return new Account(new User(role, name, Integer.parseInt(staffId)),
+                    resultSet.getString("PasswordHash"));
             }
+        }
+    }
+
+    public boolean updatePasswordHash(String personId, String passwordHash) throws SQLException {
+        String sql = "UPDATE TblPersons SET PasswordHash = ? WHERE PersonId = ?";
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, passwordHash);
+            statement.setString(2, personId);
+            return statement.executeUpdate() == 1;
         }
     }
 }

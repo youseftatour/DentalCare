@@ -16,9 +16,15 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jasperreports.version>7.0.1</jasperreports.version>
         <junit.version>4.13.2</junit.version>
+        <jbcrypt.version>0.4</jbcrypt.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>${jbcrypt.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.toedter</groupId>
             <artifactId>jcalendar</artifactId>
